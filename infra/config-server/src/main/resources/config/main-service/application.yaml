@@ -1,6 +1,10 @@
 server:
   port: 0
 
+stat:
+  client:
+    url: stats-server
+
 spring:
   jpa:
     show-sql: true
@@ -17,10 +21,9 @@ spring:
     username: postgres
     password: postgres
 
-stats-server:
-  url: http://localhost:9090
+
 
 logging:
   level:
     root: INFO
-    ru.practicum.explorewithme.main: DEBUG
+    ru.yandex.practicum: DEBUG
