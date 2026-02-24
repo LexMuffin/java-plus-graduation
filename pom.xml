@@ -19,9 +19,7 @@
 	<modules>
         <module>infra</module>
 		<module>core</module>
-		<module>core/main-service</module>
 		<module>stats</module>
-		<module>stats/stats-client</module>
 	</modules>
 
 
