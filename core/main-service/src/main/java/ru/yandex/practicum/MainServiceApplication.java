@@ -6,8 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
-@ConfigurationPropertiesScan
-@EnableDiscoveryClient
 public class MainServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(MainServiceApplication.class, args);

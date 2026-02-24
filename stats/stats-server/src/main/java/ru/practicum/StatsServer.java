@@ -6,8 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
-@ConfigurationPropertiesScan
-@EnableDiscoveryClient
 public class StatsServer {
     public static void main(String[] args) {
         SpringApplication.run(StatsServer.class, args);

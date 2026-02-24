@@ -10,10 +10,6 @@ spring:
         enabled: true
         service-id: config-server
 
-
-server:
-  port: 0
-
 eureka:
   client:
     serviceUrl:

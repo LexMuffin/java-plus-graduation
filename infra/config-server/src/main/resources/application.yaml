@@ -13,7 +13,7 @@ spring:
             - classpath:config/gateway-server/
 
 server:
-  port: 0
+  port: 8888
 
 eureka:
   client:
