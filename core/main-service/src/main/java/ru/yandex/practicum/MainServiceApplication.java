@@ -1,4 +1,4 @@
-package ru.practicum;
+package ru.yandex.practicum;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,8 +8,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @SpringBootApplication
 @ConfigurationPropertiesScan
 @EnableDiscoveryClient
-public class StatsServer {
+public class MainServiceApplication {
     public static void main(String[] args) {
-        SpringApplication.run(StatsServer.class, args);
+        SpringApplication.run(MainServiceApplication.class, args);
     }
 }
