@@ -11,6 +11,7 @@ import ru.yandex.practicum.compilations.model.Compilation;
 import ru.yandex.practicum.event.mapper.EventMapper;
 import ru.yandex.practicum.event.model.Event;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(uses = {EventMapper.class})
@@ -36,5 +37,14 @@ public interface CompilationMapper {
         if (events != null) {
             compilation.setEvents(events);
         }
+    }
+
+    default List<Event> mapEvents(List<Long> eventIds) {
+        if (eventIds == null) return new ArrayList<>();
+        List<Event> events = new ArrayList<>();
+        for (Long id : eventIds) {
+            events.add(Event.builder().id(id).build());
+        }
+        return events;
     }
 }

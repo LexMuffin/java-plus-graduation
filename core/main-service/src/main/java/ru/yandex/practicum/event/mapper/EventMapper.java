@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
+import ru.yandex.practicum.category.dto.CategoryDto;
 import ru.yandex.practicum.category.model.Category;
 import ru.yandex.practicum.event.dto.EventFullDto;
 import ru.yandex.practicum.event.dto.EventShortDto;
@@ -21,16 +22,22 @@ public interface EventMapper {
 
     EventMapper INSTANCE = Mappers.getMapper(EventMapper.class);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "confirmedRequests", constant = "0L")
     @Mapping(target = "createdOn", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "initiator", ignore = true)
+    @Mapping(target = "publishedOn", ignore = true)
     @Mapping(target = "state", constant = "PENDING")
     @Mapping(target = "views", constant = "0L")
+    @Mapping(target = "category", source = "category", qualifiedByName = "mapIdToCategory")
     Event toEntity(NewEventDto dto);
 
+    @Mapping(target = "category", source = "category", qualifiedByName = "mapCategoryToDto")
     EventFullDto toFullDto(Event event);
 
     List<EventFullDto> toFullDto(List<Event> events);
 
+    @Mapping(target = "category", source = "category", qualifiedByName = "mapCategoryToDto")
     EventShortDto toShortDto(Event event);
 
     List<EventShortDto> toShortDto(List<Event> events);
@@ -41,9 +48,13 @@ public interface EventMapper {
 
     UserShortDto toUserShortDto(User user);
 
-    @Named("mapCategoryToId")
-    default Long mapCategoryToId(Category category) {
-        return category != null ? category.getId() : null;
+    @Named("mapCategoryToDto")
+    default CategoryDto mapCategoryToDto(Category category) {
+        if (category == null) return null;
+        return CategoryDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .build();
     }
 
     @Named("mapIdToCategory")
