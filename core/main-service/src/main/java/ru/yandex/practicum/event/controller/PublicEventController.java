@@ -1,0 +1,50 @@
+package ru.yandex.practicum.event.controller;
+
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.event.dto.EventFullDto;
+import ru.yandex.practicum.event.dto.EventShortDto;
+import ru.yandex.practicum.event.service.EventService;
+
+import java.util.List;
+
+@Slf4j
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/events")
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class PublicEventController {
+
+    EventService eventService;
+
+    @GetMapping
+    public List<EventShortDto> getEvents(
+            @RequestParam(required = false) String text,
+            @RequestParam(required = false) List<Long> categories,
+            @RequestParam(required = false) Boolean paid,
+            @RequestParam(required = false) String rangeStart,
+            @RequestParam(required = false) String rangeEnd,
+            @RequestParam(defaultValue = "false") Boolean onlyAvailable,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "0") @PositiveOrZero int from,
+            @RequestParam(defaultValue = "10") @Positive int size) {
+
+        log.info("GET /events: text={}, categories={}, paid={}", text, categories, paid);
+        Pageable pageable = PageRequest.of(from / size, size);
+        return eventService.findPublicEvents(text, categories, paid, rangeStart,
+                rangeEnd, onlyAvailable, sort, pageable);
+    }
+
+    @GetMapping("/{id}")
+    public EventFullDto getEvent(@PathVariable Long id) {
+        log.info("GET /events/{}", id);
+        return eventService.getPublicEvent(id);
+    }
+}

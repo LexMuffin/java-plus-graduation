@@ -1,11 +1,14 @@
 server:
-  port: 9090
+  port: 8081
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:6543/ewm_stats
-    username: postgres
+    url: jdbc:postgresql://localhost:5433/ewm_main
+    username: postgres_main
     password: postgres
+  sql:
+    init:
+      mode: always
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,7 +17,10 @@ spring:
       hibernate.format_sql: true
       dialect: org.hibernate.dialect.PostgreSQLDialect
 
+stats-server:
+  url: http://localhost:9090
+
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    root: INFO
+    ru.yandex.practicum: DEBUG
