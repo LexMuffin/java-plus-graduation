@@ -1,5 +1,6 @@
 package ru.yandex.practicum.event.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Pageable;
 import ru.yandex.practicum.event.dto.*;
 
@@ -24,7 +25,8 @@ public interface EventService {
     List<EventShortDto> findPublicEvents(String text, List<Long> categories,
                                          Boolean paid, String rangeStart,
                                          String rangeEnd, Boolean onlyAvailable,
-                                         String sort, Pageable pageable);
+                                         String sort, Pageable pageable,
+                                         HttpServletRequest request);
 
-    EventFullDto getPublicEvent(Long eventId);
+    EventFullDto getPublicEvent(Long eventId, HttpServletRequest request);
 }

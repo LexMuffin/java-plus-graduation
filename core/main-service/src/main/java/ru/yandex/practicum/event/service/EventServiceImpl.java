@@ -1,5 +1,6 @@
 package ru.yandex.practicum.event.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import lombok.AccessLevel;
@@ -11,8 +12,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.StatsClient;
 import ru.yandex.practicum.category.model.Category;
 import ru.yandex.practicum.category.repository.CategoryRepository;
+import ru.yandex.practicum.dto.EndpointHitDto;
+import ru.yandex.practicum.dto.ViewStatsDto;
 import ru.yandex.practicum.event.dto.*;
 import ru.yandex.practicum.event.mapper.EventMapper;
 import ru.yandex.practicum.event.model.Event;
@@ -26,9 +30,7 @@ import ru.yandex.practicum.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +43,7 @@ public class EventServiceImpl implements EventService {
     EventRepository eventRepository;
     UserRepository userRepository;
     CategoryRepository categoryRepository;
+    StatsClient statClient;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -237,7 +240,8 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> findPublicEvents(String text, List<Long> categories,
                                                 Boolean paid, String rangeStart,
                                                 String rangeEnd, Boolean onlyAvailable,
-                                                String sort, Pageable pageable) {
+                                                String sort, Pageable pageable,
+                                                HttpServletRequest request) {
         log.info("Публичный поиск: text={}, categories={}, paid={}", text, categories, paid);
 
         try {
@@ -277,6 +281,37 @@ public class EventServiceImpl implements EventService {
             Page<Event> eventsPage = eventRepository.findPublicEvents(text, categories, paid, start, end, pageable);
             List<Event> events = new ArrayList<>(eventsPage.getContent());
 
+            try {
+                String queryString = request.getQueryString();
+                String uri = request.getRequestURI() + (queryString != null ? "?" + queryString : "");
+                String ip = request.getRemoteAddr();
+
+                EndpointHitDto hitDto = EndpointHitDto.builder()
+                        .app("main-service")
+                        .uri(uri)
+                        .ip(ip)
+                        .timestamp(LocalDateTime.now())
+                        .build();
+
+                statClient.saveHit(hitDto);
+                log.debug("Хит отправлен в статистику для поиска событий");
+            } catch (Exception e) {
+                log.error("Ошибка при отправке хита на поиск в статистику: {}", e.getMessage());
+            }
+
+            List<Long> eventIds = events.stream()
+                    .map(Event::getId)
+                    .collect(Collectors.toList());
+
+            Map<Long, Long> viewsMap = getViewsForEvents(eventIds);
+
+            events.forEach(event -> {
+                Long views = viewsMap.get(event.getId());
+                if (views != null) {
+                    event.setViews(views);
+                }
+            });
+
             if (onlyAvailable != null && onlyAvailable) {
                 events = events.stream()
                         .filter(e -> e.getParticipantLimit() == 0 ||
@@ -304,8 +339,9 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventFullDto getPublicEvent(Long eventId) {
-        log.info("Публичный запрос события: {}", eventId);
+    public EventFullDto getPublicEvent(Long eventId, HttpServletRequest request) {
+        String ip = request.getRemoteAddr(); // получаем IP из запроса
+        log.info("Публичный запрос события: {}, IP: {}", eventId, ip);
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> {
@@ -318,15 +354,44 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
         }
 
-        if (event.getCreatedOn().isAfter(LocalDateTime.now().minusMinutes(5))) {
-            if (event.getViews() == null || event.getViews() == 0) {
-                event.setViews(1L);
-                eventRepository.save(event);
-            }
-        } else {
-            event.setViews(event.getViews() == null ? 1 : event.getViews() + 1);
-            eventRepository.save(event);
+        try {
+            EndpointHitDto hitDto = EndpointHitDto.builder()
+                    .app("main-service")
+                    .uri("/events/" + eventId)
+                    .ip(ip)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            statClient.saveHit(hitDto);
+            log.debug("Хит отправлен в статистику для события {}", eventId);
+        } catch (Exception e) {
+            log.error("Ошибка при отправке хита в статистику: {}", e.getMessage());
         }
+
+        try {
+            LocalDateTime start = event.getPublishedOn() != null ? event.getPublishedOn() :
+                    (event.getCreatedOn() != null ? event.getCreatedOn() :
+                            LocalDateTime.now().minusYears(100));
+            LocalDateTime end = LocalDateTime.now().plusYears(100);
+
+            List<String> uris = List.of("/events/" + eventId);
+
+            List<ViewStatsDto> stats = statClient.getStats(
+                    start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    uris,
+                    true
+            );
+
+            long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
+            event.setViews(views);
+
+        } catch (Exception e) {
+            log.error("Ошибка при получении статистики просмотров: {}", e.getMessage());
+            event.setViews(event.getViews() == null ? 1 : event.getViews() + 1);
+        }
+
+        eventRepository.save(event);
 
         return EventMapper.INSTANCE.toFullDto(event);
     }
@@ -361,5 +426,58 @@ public class EventServiceImpl implements EventService {
         if (request.getParticipantLimit() != null) event.setParticipantLimit(request.getParticipantLimit());
         if (request.getRequestModeration() != null) event.setRequestModeration(request.getRequestModeration());
         if (request.getTitle() != null) event.setTitle(request.getTitle());
+    }
+
+    private Map<Long, Long> getViewsForEvents(List<Long> eventIds) {
+        if (eventIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Long, Long> viewsMap = new HashMap<>();
+
+        // Инициализируем нулями
+        for (Long eventId : eventIds) {
+            viewsMap.put(eventId, 0L);
+        }
+
+        try {
+            List<String> uris = eventIds.stream()
+                    .map(id -> "/events/" + id)
+                    .collect(Collectors.toList());
+
+            LocalDateTime start = LocalDateTime.now().minusYears(100);
+            LocalDateTime end = LocalDateTime.now().plusYears(100);
+
+            String startStr = start.format(FORMATTER);
+            String endStr = end.format(FORMATTER);
+
+            List<ViewStatsDto> stats = statClient.getStats(startStr, endStr, uris, false);
+
+            for (ViewStatsDto stat : stats) {
+                try {
+                    Long eventId = extractEventIdFromUri(stat.getUri());
+                    if (eventId != null) {
+                        viewsMap.put(eventId, stat.getHits());
+                    }
+                } catch (Exception e) {
+                    log.warn("Не удалось распарсить ID события из URI: {}", stat.getUri());
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Сервис статистики недоступен, используем значения по умолчанию (0)");
+        }
+
+        return viewsMap;
+    }
+
+    private Long extractEventIdFromUri(String uri) {
+        if (uri == null || !uri.startsWith("/events/")) {
+            return null;
+        }
+        try {
+            return Long.parseLong(uri.substring("/events/".length()));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

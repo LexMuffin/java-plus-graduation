@@ -1,5 +1,6 @@
 package ru.yandex.practicum.event.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
@@ -34,17 +35,19 @@ public class PublicEventController {
             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-            @RequestParam(defaultValue = "10") @Positive int size) {
+            @RequestParam(defaultValue = "10") @Positive int size,
+            HttpServletRequest request) {
 
         log.info("GET /events: text={}, categories={}, paid={}", text, categories, paid);
         Pageable pageable = PageRequest.of(from / size, size);
         return eventService.findPublicEvents(text, categories, paid, rangeStart,
-                rangeEnd, onlyAvailable, sort, pageable);
+                rangeEnd, onlyAvailable, sort, pageable, request);
     }
 
     @GetMapping("/{id}")
-    public EventFullDto getEvent(@PathVariable Long id) {
+    public EventFullDto getEvent(@PathVariable Long id,
+                                 HttpServletRequest request) {
         log.info("GET /events/{}", id);
-        return eventService.getPublicEvent(id);
+        return eventService.getPublicEvent(id, request);
     }
 }

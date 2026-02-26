@@ -2,108 +2,141 @@ package ru.yandex.practicum;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
+import ru.yandex.practicum.dto.EndpointHitDto;
+import ru.yandex.practicum.dto.ViewStatsDto;
+import ru.yandex.practicum.exception.StatsServerUnavailableException;
+import ru.yandex.practicum.exception.InvalidRequestException;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
-@Service
+@Component
 @Slf4j
 public class StatsClientImpl implements StatsClient {
 
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final RestClient restClient;
+    private final DiscoveryClient discoveryClient;
+    private RestClient restClient;
 
-    public StatsClientImpl(@Value("${stats-server.url}") String statsServerUrl) {
-        this.restClient = RestClient.builder()
-                .baseUrl(statsServerUrl)
-                .defaultStatusHandler(HttpStatusCode::isError, this::handleError)
-                .build();
-    }
+    @Value("${stats-server.id:stats-server}")
+    private String statServiceId;
 
-    private void handleError(HttpRequest request, ClientHttpResponse response) throws IOException {
-        HttpStatusCode statusCode = response.getStatusCode();
-        String statusText = response.getStatusText();
-
-        String errorMessage = String.format(
-                "Ошибка при обращении к серверу статистики: %d %s для URI: %s",
-                statusCode.value(),
-                statusText,
-                request.getURI()
-        );
-
-        log.error(errorMessage);
-
-        if (statusCode.is4xxClientError()) {
-            throw new RestClientException("Ошибка запроса клиента: " + errorMessage);
-        } else if (statusCode.is5xxServerError()) {
-            throw new RestClientException("Ошибка на сервере статистики: " + errorMessage);
-        } else {
-            throw new RestClientException("Неизвестная ошибка: " + errorMessage);
-        }
+    public StatsClientImpl(DiscoveryClient discoveryClient) {
+        this.discoveryClient = discoveryClient;
     }
 
     @Override
-    public void saveHit(EndpointHitDto hit) {
-        log.info("Сохранение хита: {}", hit);
+    public void saveHit(EndpointHitDto hitDto) {
+        log.info("Сохранение хита: {}", hitDto);
 
-        restClient.post()
-                .uri("/hit")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(hit)
-                .retrieve()
-                .toBodilessEntity();
+        try {
+            getRestClient().post()
+                    .uri("/hit")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(hitDto)
+                    .retrieve()
+                    .onStatus(status -> status != HttpStatus.CREATED, (request, response) -> {
+                        throw new InvalidRequestException(
+                                "Ошибка при сохранении хита: " + response.getStatusCode().value()
+                        );
+                    })
+                    .toBodilessEntity();
 
-        log.info("Хит успешно сохранен");
+            log.info("Хит успешно сохранен");
+        } catch (InvalidRequestException e) {
+            log.error("Ошибка запроса: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Неожиданная ошибка при сохранении хита: {}", e.getMessage());
+        }
     }
 
     @Override
     public List<ViewStatsDto> getStats(String start, String end, List<String> uris, Boolean unique) {
         validateDates(start, end);
 
-        log.info("Запрос статистики:");
-        log.info("  start  = {}", start);
-        log.info("  end    = {}", end);
-        log.info("  uris   = {}", uris);
-        log.info("  unique = {}", unique);
+        log.info("Запрос статистики: start={}, end={}, uris={}, unique={}",
+                start, end, uris, unique);
 
-        String uri = buildStatsUri(start, end, uris, unique);
+        try {
+            List<ViewStatsDto> stats = getRestClient().get()
+                    .uri(uriBuilder -> {
+                        uriBuilder.path("/stats")
+                                .queryParam("start", start)
+                                .queryParam("end", end);
 
-        List<ViewStatsDto> stats = restClient.get()
-                .uri(uri)
-                .retrieve()
-                .body(new ParameterizedTypeReference<>() {});
+                        if (uris != null && !uris.isEmpty()) {
+                            uriBuilder.queryParam("uris", uris.toArray());
+                        }
 
-        int size = stats != null ? stats.size() : 0;
-        log.info("Получено записей статистики: {}", size);
-        return stats;
+                        if (Boolean.TRUE.equals(unique)) {
+                            uriBuilder.queryParam("unique", true);
+                        }
+
+                        return uriBuilder.build();
+                    })
+                    .retrieve()
+                    .onStatus(status -> status != HttpStatus.OK, (request, response) -> {
+                        throw new InvalidRequestException(
+                                "Ошибка при получении статистики: " + response.getStatusCode().value()
+                        );
+                    })
+                    .body(new ParameterizedTypeReference<List<ViewStatsDto>>() {});
+
+            if (stats == null) {
+                log.info("Статистика не найдена, возвращаем пустой список");
+                return new ArrayList<>();
+            }
+
+            log.info("Получено записей статистики: {}", stats.size());
+            return stats;
+
+        } catch (InvalidRequestException e) {
+            log.error("Ошибка запроса статистики: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Ошибка при получении статистики: {}", e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
-    private String buildStatsUri(String start, String end, List<String> uris, Boolean unique) {
-        StringBuilder uri = new StringBuilder("/stats?start=" + start + "&end=" + end);
+    private ServiceInstance getInstance() {
+        try {
+            ServiceInstance serviceInstance = discoveryClient.getInstances(statServiceId)
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new StatsServerUnavailableException(
+                            "Сервис статистики не найден: " + statServiceId
+                    ));
 
-        if (uris != null && !uris.isEmpty()) {
-            for (String u : uris) {
-                uri.append("&uris=").append(u);
-            }
+            log.info("Получен URI сервиса статистики: {}", serviceInstance.getUri());
+            return serviceInstance;
+        } catch (Exception e) {
+            log.error("Ошибка обнаружения сервиса статистики: {}", e.getMessage());
+            throw new StatsServerUnavailableException(
+                    "Ошибка обнаружения адреса сервиса статистики с id: " + statServiceId
+            );
         }
+    }
 
-        if (unique != null) {
-            uri.append("&unique=").append(unique);
+    private RestClient getRestClient() {
+        if (restClient == null) {
+            ServiceInstance instance = getInstance();
+            this.restClient = RestClient.create(instance.getUri().toString());
+            log.info("RestClient создан с baseUrl: {}", instance.getUri());
         }
-
-        return uri.toString();
+        return restClient;
     }
 
     private void validateDates(String start, String end) {
@@ -111,7 +144,9 @@ public class StatsClientImpl implements StatsClient {
             LocalDateTime.parse(start, DATE_FORMATTER);
             LocalDateTime.parse(end, DATE_FORMATTER);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss", e);
+            throw new InvalidRequestException(
+                    "Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss"
+            );
         }
     }
 }

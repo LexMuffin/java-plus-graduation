@@ -14,7 +14,26 @@ spring:
       hibernate.format_sql: true
       dialect: org.hibernate.dialect.PostgreSQLDialect
 
+#logging:
+#  level:
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
 logging:
   level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org:
+      springframework:
+        orm:
+          jpa: INFO
+        web: DEBUG
+        transaction: INFO
+        transaction.interceptor: TRACE
+        orm.jpa.JpaTransactionManager: DEBUG
+      slf4j: INFO
+      hibernate:
+        SQL: DEBUG
+        type.descriptor.sql.BasicBined: TRACE
+    ru.practicum: DEBUG
+    com.netflix.discovery: DEBUG
+    org.springframework.cloud.netflix.eureka: DEBUG
+    org.springframework.cloud.client.discovery: DEBUG

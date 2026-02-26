@@ -1,11 +1,15 @@
 package ru.yandex.practicum.service;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.EndpointHitDto;
-import ru.yandex.practicum.ViewStatsDto;
+import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.dto.EndpointHitDto;
+import ru.yandex.practicum.dto.ViewStatsDto;
 import ru.yandex.practicum.mapper.StatsMapper;
 import ru.yandex.practicum.model.EndpointHit;
 import ru.yandex.practicum.repository.StatsRepository;
@@ -17,13 +21,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Transactional(readOnly = true)
 public class StatsServiceImpl implements StatsService {
 
     private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final StatsRepository statsRepository;
+    StatsRepository statsRepository;
 
     @Override
     @Transactional
@@ -39,6 +44,7 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public List<ViewStatsDto> getStats(String start, String end, List<String> uris, boolean unique) {
+
         LocalDateTime startTime = parseDateTime(start);
         LocalDateTime endTime = parseDateTime(end);
 
@@ -74,7 +80,8 @@ public class StatsServiceImpl implements StatsService {
     private void validateDateRange(LocalDateTime start, LocalDateTime end) {
         if (end.isBefore(start)) {
             log.error("Некорректный диапазон: start={}, end={}", start, end);
-            throw new IllegalArgumentException("Дата начала должна быть раньше даты окончания");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Дата начала должна быть раньше даты окончания");
         }
     }
 }

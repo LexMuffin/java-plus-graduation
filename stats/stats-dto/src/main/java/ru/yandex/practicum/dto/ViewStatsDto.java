@@ -1,4 +1,4 @@
-package ru.yandex.practicum;
+package ru.yandex.practicum.dto;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -7,10 +7,13 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @Builder
 @AllArgsConstructor
-@RequiredArgsConstructor
+@NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ViewStatsDto {
+
     String app;
+
     String uri;
+
     Long hits;
 }
