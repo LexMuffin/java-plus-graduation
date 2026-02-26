@@ -1,5 +1,6 @@
 package ru.yandex.practicum.compilations.dto;
 
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -17,5 +18,6 @@ public class UpdateCompilationRequest {
 
     Boolean pinned;
 
+    @Size(max = 50, message = "Максимальная длина названия - 50 символов")
     String title;
 }
