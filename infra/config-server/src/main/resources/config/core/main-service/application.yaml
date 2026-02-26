@@ -22,5 +22,19 @@ stats-server:
 
 logging:
   level:
-    root: INFO
-    ru.yandex.practicum: DEBUG
+    org:
+      springframework:
+        orm:
+          jpa: INFO
+        web: DEBUG
+        transaction: INFO
+        transaction.interceptor: TRACE
+        orm.jpa.JpaTransactionManager: DEBUG
+      slf4j: INFO
+      hibernate:
+        SQL: DEBUG
+        type.descriptor.sql.BasicBined: TRACE
+    ru.practicum: DEBUG
+    com.netflix.discovery: DEBUG
+    org.springframework.cloud.netflix.eureka: DEBUG
+    org.springframework.cloud.client.discovery: DEBUG

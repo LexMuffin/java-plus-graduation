@@ -16,7 +16,7 @@ import ru.yandex.practicum.compilations.service.CompilationService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/compilations")
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AdminCompilationController {
 
     CompilationService compilationService;

@@ -29,7 +29,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Transactional(readOnly = true)
 public class RequestServiceImpl implements RequestService {
 
     ParticipationRequestRepository requestRepository;
@@ -76,11 +75,23 @@ public class RequestServiceImpl implements RequestService {
             }
         }
 
+        RequestStatus status;
+        if (event.getParticipantLimit() == 0) {
+            status = RequestStatus.CONFIRMED;
+            log.info("Лимит участников = 0, статус CONFIRMED");
+        } else {
+            status = event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED;
+            log.info("Лимит участников = {}, moderation = {}, статус {}",
+                    event.getParticipantLimit(),
+                    event.getRequestModeration(),
+                    status);
+        }
+
         ParticipationRequest request = ParticipationRequest.builder()
                 .created(LocalDateTime.now())
                 .event(event)
                 .requester(user)
-                .status(event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
+                .status(status)
                 .build();
 
         ParticipationRequest saved = requestRepository.save(request);
@@ -198,6 +209,11 @@ public class RequestServiceImpl implements RequestService {
         }
 
         requestRepository.saveAll(requests);
+
+        long newConfirmedCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
+        event.setConfirmedRequests(newConfirmedCount);
+        eventRepository.save(event);
+
         log.info("Статусы обновлены: подтверждено={}, отклонено={}", confirmedList.size(), rejectedList.size());
 
         return EventRequestStatusUpdateResult.builder()

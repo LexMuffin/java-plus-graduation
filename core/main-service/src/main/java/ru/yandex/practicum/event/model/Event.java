@@ -1,5 +1,6 @@
 package ru.yandex.practicum.event.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -30,15 +31,18 @@ public class Event {
     Category category;
 
     @Column(name = "confirmed_requests")
-    Long confirmedRequests;
+    @Builder.Default
+    Long confirmedRequests = 0L;
 
     @Column(name = "created_on", nullable = false)
-    LocalDateTime createdOn;
+    @Builder.Default
+    LocalDateTime createdOn = LocalDateTime.now();
 
     @Column(length = 7000, nullable = false)
     String description;
 
     @Column(name = "event_date", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime eventDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -49,24 +53,29 @@ public class Event {
     Location location;
 
     @Column(nullable = false)
-    Boolean paid;
+    @Builder.Default
+    Boolean paid = false;
 
     @Column(name = "participant_limit")
-    Integer participantLimit;
+    @Builder.Default
+    Integer participantLimit = 0;
 
     @Column(name = "published_on")
     LocalDateTime publishedOn;
 
     @Column(name = "request_moderation")
-    Boolean requestModeration;
+    @Builder.Default
+    Boolean requestModeration = true;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 50, nullable = false)
-    EventState state;
+    @Builder.Default
+    EventState state = EventState.PENDING;
 
     @Column(length = 120, nullable = false)
     String title;
 
     @Column
-    Long views;
+    @Builder.Default
+    Long views = 0L;
 }

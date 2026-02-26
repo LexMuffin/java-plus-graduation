@@ -46,8 +46,6 @@ public interface EventMapper {
 
     Location toLocation(LocationDto dto);
 
-    UserShortDto toUserShortDto(User user);
-
     @Named("mapCategoryToDto")
     default CategoryDto mapCategoryToDto(Category category) {
         if (category == null) return null;
@@ -61,5 +59,13 @@ public interface EventMapper {
     default Category mapIdToCategory(Long id) {
         if (id == null) return null;
         return Category.builder().id(id).build();
+    }
+
+    default UserShortDto toUserShortDto(User user) {
+        if (user == null) return null;
+        return UserShortDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .build();
     }
 }
