@@ -34,6 +34,7 @@ public class RequestServiceImpl implements RequestService {
     ParticipationRequestRepository requestRepository;
     UserRepository userRepository;
     EventRepository eventRepository;
+    RequestMapper requestMapper;
 
     @Override
     @Transactional
@@ -97,7 +98,7 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest saved = requestRepository.save(request);
         log.info("Запрос создан, id: {}, статус: {}", saved.getId(), saved.getStatus());
 
-        return RequestMapper.INSTANCE.toDto(saved);
+        return requestMapper.toDto(saved);
     }
 
     @Override
@@ -109,7 +110,7 @@ public class RequestServiceImpl implements RequestService {
             throw new NotFoundException("Пользователь не найден");
         }
 
-        return RequestMapper.INSTANCE.toDto(requestRepository.findByRequesterId(userId));
+        return requestMapper.toDto(requestRepository.findByRequesterId(userId));
     }
 
     @Override
@@ -132,7 +133,7 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest saved = requestRepository.save(request);
         log.info("Запрос отменен, id: {}", saved.getId());
 
-        return RequestMapper.INSTANCE.toDto(saved);
+        return requestMapper.toDto(saved);
     }
 
     @Override
@@ -150,7 +151,7 @@ public class RequestServiceImpl implements RequestService {
             throw new NotFoundException("Событие не найдено");
         }
 
-        return RequestMapper.INSTANCE.toDto(requestRepository.findByEventId(eventId));
+        return requestMapper.toDto(requestRepository.findByEventId(eventId));
     }
 
     @Override
@@ -222,8 +223,8 @@ public class RequestServiceImpl implements RequestService {
         log.info("Статусы обновлены: подтверждено={}, отклонено={}", confirmedList.size(), rejectedList.size());
 
         return EventRequestStatusUpdateResult.builder()
-                .confirmedRequests(RequestMapper.INSTANCE.toDto(confirmedList))
-                .rejectedRequests(RequestMapper.INSTANCE.toDto(rejectedList))
+                .confirmedRequests(requestMapper.toDto(confirmedList))
+                .rejectedRequests(requestMapper.toDto(rejectedList))
                 .build();
     }
 }

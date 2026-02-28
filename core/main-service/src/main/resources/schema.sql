@@ -58,3 +58,33 @@ CREATE TABLE IF NOT EXISTS participation_requests (
     CONSTRAINT fk_requests_requester FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT uq_request UNIQUE (event_id, requester_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_name ON users(name);
+
+CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
+
+CREATE INDEX IF NOT EXISTS idx_events_category_id ON events(category_id);
+CREATE INDEX IF NOT EXISTS idx_events_initiator_id ON events(initiator_id);
+CREATE INDEX IF NOT EXISTS idx_events_state ON events(state);
+CREATE INDEX IF NOT EXISTS idx_events_event_date ON events(event_date);
+CREATE INDEX IF NOT EXISTS idx_events_paid ON events(paid);
+CREATE INDEX IF NOT EXISTS idx_events_created_on ON events(created_on);
+CREATE INDEX IF NOT EXISTS idx_events_published_on ON events(published_on);
+
+CREATE INDEX IF NOT EXISTS idx_events_state_event_date ON events(state, event_date);
+CREATE INDEX IF NOT EXISTS idx_events_category_state_date ON events(category_id, state, event_date);
+CREATE INDEX IF NOT EXISTS idx_events_initiator_state ON events(initiator_id, state);
+CREATE INDEX IF NOT EXISTS idx_events_location ON events(lat, lon);
+
+CREATE INDEX IF NOT EXISTS idx_compilations_pinned ON compilations(pinned);
+CREATE INDEX IF NOT EXISTS idx_compilations_title ON compilations(title);
+
+CREATE INDEX IF NOT EXISTS idx_compilation_events_event_id ON compilation_events(event_id);
+
+CREATE INDEX IF NOT EXISTS idx_requests_event_id ON participation_requests(event_id);
+CREATE INDEX IF NOT EXISTS idx_requests_requester_id ON participation_requests(requester_id);
+CREATE INDEX IF NOT EXISTS idx_requests_status ON participation_requests(status);
+CREATE INDEX IF NOT EXISTS idx_requests_created ON participation_requests(created);
+CREATE INDEX IF NOT EXISTS idx_requests_event_status ON participation_requests(event_id, status);
+CREATE INDEX IF NOT EXISTS idx_requests_requester_status ON participation_requests(requester_id, status);

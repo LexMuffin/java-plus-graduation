@@ -3,7 +3,6 @@ package ru.yandex.practicum.event.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 import ru.yandex.practicum.category.dto.CategoryDto;
 import ru.yandex.practicum.category.model.Category;
 import ru.yandex.practicum.event.dto.EventFullDto;
@@ -19,8 +18,6 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface EventMapper {
-
-    EventMapper INSTANCE = Mappers.getMapper(EventMapper.class);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "confirmedRequests", constant = "0L")

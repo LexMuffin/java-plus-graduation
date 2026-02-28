@@ -31,13 +31,14 @@ public class CompilationServiceImpl implements CompilationService {
 
     CompilationRepository compilationRepository;
     EventRepository eventRepository;
+    CompilationMapper compilationMapper;
 
     @Override
     @Transactional
     public CompilationDto createCompilation(NewCompilationDto dto) {
         log.info("Создание подборки: {}", dto.getTitle());
 
-        Compilation compilation = CompilationMapper.INSTANCE.toEntity(dto);
+        Compilation compilation = compilationMapper.toEntity(dto);
 
         if (dto.getEvents() != null && !dto.getEvents().isEmpty()) {
             List<Event> events = eventRepository.findAllById(dto.getEvents());
@@ -53,7 +54,7 @@ public class CompilationServiceImpl implements CompilationService {
         try {
             Compilation saved = compilationRepository.save(compilation);
             log.info("Подборка создана, id: {}", saved.getId());
-            return CompilationMapper.INSTANCE.toDto(saved);
+            return compilationMapper.toDto(saved);
         } catch (DataIntegrityViolationException e) {
             log.error("Название уже существует: {}", dto.getTitle());
             throw new ConflictException("Подборка с таким названием уже существует");
@@ -90,12 +91,12 @@ public class CompilationServiceImpl implements CompilationService {
             events = eventRepository.findAllById(request.getEvents());
         }
 
-        CompilationMapper.INSTANCE.updateEntity(request, compilation, events);
+        compilationMapper.updateEntity(request, compilation, events);
 
         try {
             Compilation updated = compilationRepository.save(compilation);
             log.info("Подборка обновлена, id: {}", updated.getId());
-            return CompilationMapper.INSTANCE.toDto(updated);
+            return compilationMapper.toDto(updated);
         } catch (DataIntegrityViolationException e) {
             log.error("Название уже существует: {}", request.getTitle());
             throw new ConflictException("Подборка с таким названием уже существует");
@@ -107,9 +108,9 @@ public class CompilationServiceImpl implements CompilationService {
         log.info("Запрос подборок: pinned={}, page={}", pinned, pageable.getPageNumber());
 
         if (pinned == null) {
-            return CompilationMapper.INSTANCE.toDto(compilationRepository.findAll(pageable).getContent());
+            return compilationMapper.toDto(compilationRepository.findAll(pageable).getContent());
         } else {
-            return CompilationMapper.INSTANCE.toDto(compilationRepository.findByPinned(pinned, pageable).getContent());
+            return compilationMapper.toDto(compilationRepository.findByPinned(pinned, pageable).getContent());
         }
     }
 
@@ -123,6 +124,6 @@ public class CompilationServiceImpl implements CompilationService {
                     return new NotFoundException("Подборка не найдена");
                 });
 
-        return CompilationMapper.INSTANCE.toDto(compilation);
+        return compilationMapper.toDto(compilation);
     }
 }

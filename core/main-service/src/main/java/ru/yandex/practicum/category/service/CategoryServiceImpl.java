@@ -1,6 +1,8 @@
 package ru.yandex.practicum.category.service;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
@@ -20,21 +22,23 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CategoryServiceImpl implements CategoryService {
 
-    private final CategoryRepository categoryRepository;
+    CategoryRepository categoryRepository;
+    CategoryMapper categoryMapper;
 
     @Override
     @Transactional
     public CategoryDto addCategory(NewCategoryDto newCategoryDto) {
         log.info("Добавление: {}", newCategoryDto.getName());
 
-        Category category = CategoryMapper.INSTANCE.toEntity(newCategoryDto);
+        Category category = categoryMapper.toEntity(newCategoryDto);
 
         try {
             Category savedCategory = categoryRepository.save(category);
             log.info("Добавлено, id: {}", savedCategory.getId());
-            return CategoryMapper.INSTANCE.toDto(savedCategory);
+            return categoryMapper.toDto(savedCategory);
         } catch (DataIntegrityViolationException e) {
             log.error("Уже существует: {}", newCategoryDto.getName());
             throw new ConflictException("Имя категории должно быть уникальным");
@@ -57,7 +61,7 @@ public class CategoryServiceImpl implements CategoryService {
         try {
             Category updatedCategory = categoryRepository.save(category);
             log.info("Обновлено id: {}", updatedCategory.getId());
-            return CategoryMapper.INSTANCE.toDto(updatedCategory);
+            return categoryMapper.toDto(updatedCategory);
         } catch (DataIntegrityViolationException e) {
             log.error("Уже существует: {}", categoryDto.getName());
             throw new ConflictException("Имя категории должно быть уникальным");
@@ -69,13 +73,12 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(Long catId) {
         log.info("Удаление id: {}", catId);
 
-        Category category = categoryRepository.findById(catId)
-                .orElseThrow(() -> {
-                    log.error("Не найдена id: {}", catId);
-                    return new NotFoundException("Категория не найдена");
-                });
+        if (!categoryRepository.existsById(catId)) {
+            log.error("Не найдена id: {}", catId);
+            throw new NotFoundException("Категория не найдена");
+        }
 
-        categoryRepository.delete(category);
+        categoryRepository.deleteById(catId);
         log.info("Удалено id: {}", catId);
     }
 
@@ -84,7 +87,7 @@ public class CategoryServiceImpl implements CategoryService {
         int from = pageable.getPageNumber() * pageable.getPageSize();
         log.info("Запрос: from={}, size={}", from, pageable.getPageSize());
 
-        return CategoryMapper.INSTANCE.toDto(categoryRepository.findAll(pageable).getContent());
+        return categoryMapper.toDto(categoryRepository.findAll(pageable).getContent());
     }
 
     @Override
@@ -97,6 +100,6 @@ public class CategoryServiceImpl implements CategoryService {
                     return new NotFoundException("Категория не найдена");
                 });
 
-        return CategoryMapper.INSTANCE.toDto(category);
+        return categoryMapper.toDto(category);
     }
 }

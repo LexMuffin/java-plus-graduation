@@ -25,18 +25,19 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
+    UserMapper userMapper;
 
     @Override
     @Transactional
     public UserDto createUser(NewUserRequest request) {
         log.info("Добавление: {}", request.getEmail());
 
-        User user = UserMapper.INSTANCE.toEntity(request);
+        User user = userMapper.toEntity(request);
 
         try {
             User saved = userRepository.save(user);
             log.info("Добавлено, id: {}", saved.getId());
-            return UserMapper.INSTANCE.toDto(saved);
+            return userMapper.toDto(saved);
         } catch (DataIntegrityViolationException e) {
             log.error("Email уже существует: {}", request.getEmail());
             throw new ConflictException("Email должен быть уникальным");
@@ -49,11 +50,11 @@ public class UserServiceImpl implements UserService {
             log.info("Запрос всех: from={}, size={}",
                     pageable.getPageNumber() * pageable.getPageSize(),
                     pageable.getPageSize());
-            return UserMapper.INSTANCE.toDto(userRepository.findAll(pageable).getContent());
+            return userMapper.toDto(userRepository.findAll(pageable).getContent());
         }
 
         log.info("Запрос пользователей: ids={}", ids);
-        return UserMapper.INSTANCE.toDto(userRepository.findByIdIn(ids, pageable).getContent());
+        return userMapper.toDto(userRepository.findByIdIn(ids, pageable).getContent());
     }
 
     @Override

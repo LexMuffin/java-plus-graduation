@@ -43,6 +43,7 @@ public class EventServiceImpl implements EventService {
     EventRepository eventRepository;
     UserRepository userRepository;
     CategoryRepository categoryRepository;
+    EventMapper eventMapper;
     StatsClient statClient;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -70,7 +71,7 @@ public class EventServiceImpl implements EventService {
                     "Поле eventDate: дата должна быть не раньше чем через 2 часа. Текущее значение: " + dto.getEventDate());
         }
 
-        Event event = EventMapper.INSTANCE.toEntity(dto);
+        Event event = eventMapper.toEntity(dto);
         event.setInitiator(user);
         event.setCategory(category);
 
@@ -81,7 +82,7 @@ public class EventServiceImpl implements EventService {
         try {
             Event savedEvent = eventRepository.save(event);
             log.info("Событие создано, id: {}", savedEvent.getId());
-            return EventMapper.INSTANCE.toFullDto(savedEvent);
+            return eventMapper.toFullDto(savedEvent);
         } catch (DataIntegrityViolationException e) {
             log.error("Ошибка целостности: {}", e.getMessage());
             throw new ConflictException("Нарушение целостности данных");
@@ -98,7 +99,7 @@ public class EventServiceImpl implements EventService {
         }
 
         Page<Event> events = eventRepository.findByInitiatorId(userId, pageable);
-        return EventMapper.INSTANCE.toShortDto(events.getContent());
+        return eventMapper.toShortDto(events.getContent());
     }
 
     @Override
@@ -116,7 +117,7 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
         }
 
-        return EventMapper.INSTANCE.toFullDto(event);
+        return eventMapper.toFullDto(event);
     }
 
     @Override
@@ -158,7 +159,7 @@ public class EventServiceImpl implements EventService {
         try {
             Event updatedEvent = eventRepository.save(event);
             log.info("Событие обновлено пользователем, id: {}", updatedEvent.getId());
-            return EventMapper.INSTANCE.toFullDto(updatedEvent);
+            return eventMapper.toFullDto(updatedEvent);
         } catch (DataIntegrityViolationException e) {
             log.error("Ошибка целостности: {}", e.getMessage());
             throw new ConflictException("Нарушение целостности данных");
@@ -180,7 +181,7 @@ public class EventServiceImpl implements EventService {
         LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, FORMATTER) : null;
 
         Page<Event> events = eventRepository.findAdminEvents(users, stateList, categories, start, end, pageable);
-        return EventMapper.INSTANCE.toFullDto(events.getContent());
+        return eventMapper.toFullDto(events.getContent());
     }
 
     @Override
@@ -227,7 +228,7 @@ public class EventServiceImpl implements EventService {
             Event updatedEvent = eventRepository.save(event);
             log.info("Событие обновлено администратором, id: {}", updatedEvent.getId());
 
-            EventFullDto dto = EventMapper.INSTANCE.toFullDto(updatedEvent);
+            EventFullDto dto = eventMapper.toFullDto(updatedEvent);
             dto.setConfirmedRequests(event.getConfirmedRequests());
             return dto;
         } catch (DataIntegrityViolationException e) {
@@ -327,7 +328,7 @@ public class EventServiceImpl implements EventService {
                 }
             }
 
-            return EventMapper.INSTANCE.toShortDto(events);
+            return eventMapper.toShortDto(events);
 
         } catch (ResponseStatusException e) {
             throw e;
@@ -393,7 +394,7 @@ public class EventServiceImpl implements EventService {
 
         eventRepository.save(event);
 
-        return EventMapper.INSTANCE.toFullDto(event);
+        return eventMapper.toFullDto(event);
     }
 
     private void updateEventFields(Event event, UpdateEventUserRequest request) {
@@ -405,7 +406,7 @@ public class EventServiceImpl implements EventService {
         }
         if (request.getDescription() != null) event.setDescription(request.getDescription());
         if (request.getEventDate() != null) event.setEventDate(request.getEventDate());
-        if (request.getLocation() != null) event.setLocation(EventMapper.INSTANCE.toLocation(request.getLocation()));
+        if (request.getLocation() != null) event.setLocation(eventMapper.toLocation(request.getLocation()));
         if (request.getPaid() != null) event.setPaid(request.getPaid());
         if (request.getParticipantLimit() != null) event.setParticipantLimit(request.getParticipantLimit());
         if (request.getRequestModeration() != null) event.setRequestModeration(request.getRequestModeration());
@@ -421,7 +422,7 @@ public class EventServiceImpl implements EventService {
         }
         if (request.getDescription() != null) event.setDescription(request.getDescription());
         if (request.getEventDate() != null) event.setEventDate(request.getEventDate());
-        if (request.getLocation() != null) event.setLocation(EventMapper.INSTANCE.toLocation(request.getLocation()));
+        if (request.getLocation() != null) event.setLocation(eventMapper.toLocation(request.getLocation()));
         if (request.getPaid() != null) event.setPaid(request.getPaid());
         if (request.getParticipantLimit() != null) event.setParticipantLimit(request.getParticipantLimit());
         if (request.getRequestModeration() != null) event.setRequestModeration(request.getRequestModeration());
