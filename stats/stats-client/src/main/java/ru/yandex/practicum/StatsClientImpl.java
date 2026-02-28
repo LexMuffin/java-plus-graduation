@@ -1,0 +1,143 @@
+package ru.yandex.practicum;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import ru.yandex.practicum.dto.EndpointHitDto;
+import ru.yandex.practicum.dto.ViewStatsDto;
+import ru.yandex.practicum.exception.StatsServerUnavailableException;
+import ru.yandex.practicum.exception.InvalidRequestException;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+@Slf4j
+public class StatsClientImpl implements StatsClient {
+
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private final RestTemplate restTemplate;
+
+    @Value("${stats-server.id:stats-server}")
+    private String statServiceId;
+
+    public StatsClientImpl(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    @Override
+    public void saveHit(EndpointHitDto hitDto) {
+        log.info("Сохранение хита: {}", hitDto);
+
+        try {
+            // Используем имя сервиса в URL
+            String url = String.format("http://%s/hit", statServiceId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<EndpointHitDto> requestEntity = new HttpEntity<>(hitDto, headers);
+
+            ResponseEntity<Void> response = restTemplate.postForEntity(
+                    url,
+                    requestEntity,
+                    Void.class
+            );
+
+            if (response.getStatusCode() != HttpStatus.CREATED) {
+                throw new InvalidRequestException(
+                        "Ошибка при сохранении хита: " + response.getStatusCode().value()
+                );
+            }
+
+            log.info("Хит успешно сохранен");
+        } catch (RestClientException e) {
+            log.error("Ошибка при сохранении хита: {}", e.getMessage());
+            throw new StatsServerUnavailableException("Сервис статистики временно недоступен: " + e.getMessage());
+        } catch (InvalidRequestException e) {
+            log.error("Ошибка запроса: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Неожиданная ошибка при сохранении хита: {}", e.getMessage());
+            throw new StatsServerUnavailableException("Неожиданная ошибка при сохранении хита");
+        }
+    }
+
+    @Override
+    public List<ViewStatsDto> getStats(String start, String end, List<String> uris, Boolean unique) {
+        validateDates(start, end);
+
+        log.info("Запрос статистики: start={}, end={}, uris={}, unique={}",
+                start, end, uris, unique);
+
+        try {
+            String url = buildStatsUrl(start, end, uris, unique);
+
+            ResponseEntity<List<ViewStatsDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<ViewStatsDto>>() {}
+            );
+
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new InvalidRequestException(
+                        "Ошибка при получении статистики: " + response.getStatusCode().value()
+                );
+            }
+
+            List<ViewStatsDto> stats = response.getBody();
+            if (stats == null) {
+                log.info("Статистика не найдена, возвращаем пустой список");
+                return new ArrayList<>();
+            }
+
+            log.info("Получено записей статистики: {}", stats.size());
+            return stats;
+
+        } catch (RestClientException e) {
+            log.error("Ошибка при получении статистики: {}", e.getMessage());
+            throw new StatsServerUnavailableException("Сервис статистики временно недоступен: " + e.getMessage());
+        } catch (InvalidRequestException e) {
+            log.error("Ошибка запроса статистики: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Ошибка при получении статистики: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    private String buildStatsUrl(String start, String end, List<String> uris, Boolean unique) {
+        StringBuilder url = new StringBuilder();
+        url.append(String.format("http://%s/stats?start=%s&end=%s",
+                statServiceId, start, end));
+
+        if (uris != null && !uris.isEmpty()) {
+            url.append("&uris=").append(String.join(",", uris));
+        }
+
+        if (Boolean.TRUE.equals(unique)) {
+            url.append("&unique=true");
+        }
+
+        return url.toString();
+    }
+
+    private void validateDates(String start, String end) {
+        try {
+            LocalDateTime.parse(start, DATE_FORMATTER);
+            LocalDateTime.parse(end, DATE_FORMATTER);
+        } catch (Exception e) {
+            throw new InvalidRequestException(
+                    "Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss"
+            );
+        }
+    }
+}
