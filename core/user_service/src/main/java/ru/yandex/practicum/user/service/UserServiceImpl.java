@@ -70,4 +70,17 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(userId);
         log.info("Удалено id: {}", userId);
     }
+
+    @Override
+    public UserDto getUser(Long userId) {
+        log.info("Запрос пользователя: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.error("Пользователь не найден: {}", userId);
+                    return new NotFoundException("Пользователь с id=" + userId + " не найден");
+                });
+
+        return userMapper.toDto(user);
+    }
 }

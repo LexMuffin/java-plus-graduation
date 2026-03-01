@@ -78,12 +78,12 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> getUserEvents(Long userId, Pageable pageable) {
         log.info("Запрос событий пользователя: {}", userId);
 
-        try {
+//        try {
             userClient.getUser(userId);
-        } catch (Exception e) {
-            log.warn("Пользователь не найден: {}", userId);
-            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
-        }
+//        } catch (Exception e) {
+//            log.warn("Пользователь не найден: {}", userId);
+//            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+//        }
 
         Page<Event> events = eventRepository.findByInitiator(userId, pageable);
         return eventMapper.toShortDto(events.getContent());

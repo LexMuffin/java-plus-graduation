@@ -21,19 +21,24 @@ spring:
 
 logging:
   level:
-    org:
-      springframework:
-        orm:
-          jpa: INFO
-        web: DEBUG
-        transaction: INFO
-        transaction.interceptor: TRACE
-        orm.jpa.JpaTransactionManager: DEBUG
-      slf4j: INFO
-      hibernate:
-        SQL: DEBUG
-        type.descriptor.sql.BasicBined: TRACE
-    ru.practicum: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet: DEBUG
+    org.springframework.web.client: DEBUG
+    org.springframework.web.reactive: DEBUG
+
+    org.springframework.cloud.openfeign: DEBUG
+    feign: DEBUG
+    com.netflix: DEBUG
+
+    ru.yandex.practicum: DEBUG
+
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+    org.springframework.orm.jpa: DEBUG
+    org.springframework.transaction: DEBUG
+
     com.netflix.discovery: DEBUG
-    org.springframework.cloud.netflix.eureka: DEBUG
-    org.springframework.cloud.client.discovery: DEBUG
+    com.netflix.eureka: DEBUG
+
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: DEBUG

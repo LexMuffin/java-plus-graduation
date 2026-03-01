@@ -51,4 +51,10 @@ public class AdminUserController {
         log.info("DELETE /admin/users/{}", userId);
         userService.deleteUser(userId);
     }
+
+    @GetMapping("/{userId}")
+    public UserDto getUser(@PathVariable Long userId) {
+        log.info("GET /admin/users/{}", userId);
+        return userService.getUser(userId);
+    }
 }
