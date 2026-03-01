@@ -5,10 +5,55 @@ spring:
         locator:
           enabled: false
       routes:
-        - id: main_service_route
-          uri: lb://main-service
+        - id: public_categories_route
+          uri: lb://event-service
           predicates:
-            - Path=/**
+            - Path=/categories, /categories/**
+
+        - id: public_compilations_route
+          uri: lb://event-service
+          predicates:
+            - Path=/compilations, /compilations/**
+
+        - id: public_events_route
+          uri: lb://event-service
+          predicates:
+            - Path=/events, /events/**
+
+        - id: private_user_events_route
+          uri: lb://event-service
+          predicates:
+            - Path=/users/{userId}/events, /users/{userId}/events/**
+
+        - id: private_user_requests_route
+          uri: lb://request-service
+          predicates:
+            - Path=/users/{userId}/requests, /users/{userId}/requests/**, /users/{userId}/events/{eventId}/requests, /users/{userId}/events/{eventId}/requests/**
+
+        - id: admin_users_route
+          uri: lb://user-service
+          predicates:
+            - Path=/admin/users, /admin/users/**
+
+        - id: admin_categories_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/categories, /admin/categories/**
+
+        - id: admin_compilations_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/compilations, /admin/compilations/**
+
+        - id: admin_events_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/events, /admin/events/**
+
+        - id: internal_stats_route
+          uri: lb://stats-service
+          predicates:
+            - Path=/stats, /stats/**
 
 server:
   port: 8080
