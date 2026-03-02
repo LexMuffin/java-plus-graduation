@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ru.yandex.practicum.dto.event.EventState;
-import ru.yandex.practicum.model.Category;
 
 import java.time.LocalDateTime;
 
