@@ -9,12 +9,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ewm_stats
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      test: ["CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       timeout: 5s
       interval: 5s
       retries: 10
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   ewm-db:
     image: postgres:16.1
@@ -26,77 +24,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ewm_main
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      test: ["CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       timeout: 5s
       interval: 5s
       retries: 10
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  event-db:
-    image: postgres:16.1
-    container_name: postgres-event-db
-    ports:
-      - "6545:5432"
-    environment:
-      POSTGRES_USER: event
-      POSTGRES_PASSWORD: event
-      POSTGRES_DB: event
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
-      timeout: 5s
-      interval: 5s
-      retries: 10
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  request-db:
-    image: postgres:16.1
-    container_name: postgres-request-db
-    ports:
-      - "6546:5432"
-    environment:
-      POSTGRES_USER: request
-      POSTGRES_PASSWORD: request
-      POSTGRES_DB: request
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
-      timeout: 5s
-      interval: 5s
-      retries: 10
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  user-db:
-    image: postgres:16.1
-    container_name: postgres-user-db
-    ports:
-      - "6547:5432"
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: user
-      POSTGRES_DB: user
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
-      timeout: 5s
-      interval: 5s
-      retries: 10
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  category-db:
-    image: postgres:16.1
-    container_name: postgres-category-db
-    ports:
-      - "6549:5432"
-    environment:
-      POSTGRES_USER: category
-      POSTGRES_PASSWORD: category
-      POSTGRES_DB: category
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
-      timeout: 5s
-      interval: 5s
-      retries: 10
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
