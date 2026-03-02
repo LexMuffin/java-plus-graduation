@@ -55,7 +55,7 @@ public class RequestServiceImpl implements RequestService {
 
         EventFullDto eventDto;
         try {
-            eventDto = eventClient.getEvent(eventId);
+            eventDto = eventClient.getInternalEvent(eventId);
         } catch (FeignException.NotFound e) {
             log.error("Событие с id {} не найдено", eventId);
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");

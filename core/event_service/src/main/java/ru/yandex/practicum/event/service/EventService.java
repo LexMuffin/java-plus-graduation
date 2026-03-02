@@ -33,4 +33,6 @@ public interface EventService {
     List<EventFullDto> getEventsByIds(List<Long> ids);
 
     boolean existsEventsByCategoryId(Long catId);
+
+    EventFullDto getEventById(Long id);
 }

@@ -8,15 +8,18 @@ import ru.yandex.practicum.dto.event.EventFullDto;
 
 import java.util.List;
 
-@FeignClient(name = "event-service", path = "/events")
+@FeignClient(name = "event-service")
 public interface EventServiceClient {
 
-    @GetMapping("/by-ids")
+    @GetMapping("/events/by-ids")
     List<EventFullDto> getEventsByIds(@RequestParam("ids") List<Long> ids);
 
-    @GetMapping("/{id}")
+    @GetMapping("/events/{id}")
     EventFullDto getEvent(@PathVariable("id") Long id);
 
-    @GetMapping("/categories/{catId}/exists")
+    @GetMapping("/events/categories/{catId}/exists")
     boolean existsEventsByCategoryId(@RequestParam("catId") Long catId);
+
+    @GetMapping("/internal/events/{id}")
+    EventFullDto getInternalEvent(@PathVariable("id") Long id);
 }

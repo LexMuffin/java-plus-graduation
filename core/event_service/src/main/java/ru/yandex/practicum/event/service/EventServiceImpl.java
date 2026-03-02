@@ -654,4 +654,14 @@ public class EventServiceImpl implements EventService {
         log.info("Проверка существования событий для категории: {}", catId);
         return eventRepository.existsByCategory(catId);
     }
+
+    @Override
+    public EventFullDto getEventById(Long id) {
+        log.info("Получение события по ID для внутренних вызовов: {}", id);
+
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Событие с id=" + id + " не найдено"));
+
+        return eventMapper.toFullDto(event);
+    }
 }
