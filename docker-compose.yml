@@ -28,3 +28,25 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+
+  db-init:
+    image: postgres:16.1
+    container_name: init-ewm-db
+    depends_on:
+      ewm-db:
+        condition: service_healthy
+    entrypoint: |
+      bash -c '
+      set -e
+      until psql postgresql://postgres_main:postgres@ewm-db:5432/ewm_main -c "\q"; do
+        echo "PostgreSQL is unavailable - sleeping"
+        sleep 1
+      done
+
+      psql postgresql://postgres_main:postgres@ewm-db:5432/ewm_main -v ON_ERROR_STOP=1 <<EOSQL
+      CREATE DATABASE ewm_category;
+      CREATE DATABASE ewm_user;
+      CREATE DATABASE ewm_request;
+      CREATE DATABASE ewm_event;
+      EOSQL
+      '
