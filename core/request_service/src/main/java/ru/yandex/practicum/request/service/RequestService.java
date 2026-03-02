@@ -18,4 +18,6 @@ public interface RequestService {
 
     EventRequestStatusUpdateResult updateRequestStatus(Long userId, Long eventId,
                                                        EventRequestStatusUpdateRequest request);
+
+    Long getConfirmedRequests(Long eventId);
 }

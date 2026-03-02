@@ -16,6 +16,7 @@
         <module>event_service</module>
         <module>request_service</module>
         <module>interaction-api</module>
+        <module>category-service</module>
     </modules>
 
     <properties>

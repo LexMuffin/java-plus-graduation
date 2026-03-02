@@ -11,8 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.category.model.Category;
 import ru.yandex.practicum.client.category.CategoryServiceClient;
+import ru.yandex.practicum.client.request.RequestServiceClient;
 import ru.yandex.practicum.client.stats.StatsServiceClient;
 import ru.yandex.practicum.client.user.UserServiceClient;
 import ru.yandex.practicum.dto.EndpointHitDto;
@@ -43,6 +43,7 @@ public class EventServiceImpl implements EventService {
     StatsServiceClient statsClient;
     UserServiceClient userClient;
     CategoryServiceClient categoryClient;
+    RequestServiceClient requestClient;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -52,7 +53,6 @@ public class EventServiceImpl implements EventService {
         log.info("Создание события пользователем: {}", userId);
 
         UserDto userDto = userClient.getUser(userId);
-
         CategoryDto categoryDto = categoryClient.getCategory(dto.getCategory());
 
         if (dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
@@ -63,7 +63,8 @@ public class EventServiceImpl implements EventService {
 
         Event event = eventMapper.toEntity(dto);
         event.setInitiator(userDto.getId());
-        event.setCategory(Category.builder().id(categoryDto.getId()).build());
+        event.setCategory(categoryDto.getId());
+        event.setConfirmedRequests(0L);
 
         if (event.getPaid() == null) event.setPaid(false);
         if (event.getParticipantLimit() == null) event.setParticipantLimit(0);
@@ -71,22 +72,35 @@ public class EventServiceImpl implements EventService {
 
         Event savedEvent = eventRepository.save(event);
         log.info("Событие создано, id: {}", savedEvent.getId());
-        return eventMapper.toFullDto(savedEvent);
+
+        EventFullDto fullDto = eventMapper.toFullDto(savedEvent);
+        try {
+            CategoryDto fullCategoryDto = categoryClient.getCategory(savedEvent.getCategory());
+            fullDto.setCategory(fullCategoryDto);
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить данные категории для события {}", savedEvent.getId());
+        }
+
+        return fullDto;
     }
 
     @Override
     public List<EventShortDto> getUserEvents(Long userId, Pageable pageable) {
         log.info("Запрос событий пользователя: {}", userId);
 
-//        try {
+        try {
             userClient.getUser(userId);
-//        } catch (Exception e) {
-//            log.warn("Пользователь не найден: {}", userId);
-//            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
-//        }
+        } catch (Exception e) {
+            log.warn("Пользователь не найден: {}", userId);
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+        }
 
         Page<Event> events = eventRepository.findByInitiator(userId, pageable);
-        return eventMapper.toShortDto(events.getContent());
+        List<EventShortDto> dtos = eventMapper.toShortDto(events.getContent());
+
+        enrichEventsWithCategories(dtos);
+
+        return dtos;
     }
 
     @Override
@@ -104,7 +118,23 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
         }
 
-        return eventMapper.toFullDto(event);
+        try {
+            Long confirmedRequests = requestClient.getConfirmedRequests(eventId);
+            event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+        } catch (Exception e) {
+            log.warn("Не удалось получить количество подтверждённых запросов для события {}", eventId);
+        }
+
+        EventFullDto dto = eventMapper.toFullDto(event);
+
+        try {
+            CategoryDto categoryDto = categoryClient.getCategory(event.getCategory());
+            dto.setCategory(categoryDto);
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить данные категории для события {}", eventId);
+        }
+
+        return dto;
     }
 
     @Override
@@ -145,7 +175,17 @@ public class EventServiceImpl implements EventService {
 
         Event updatedEvent = eventRepository.save(event);
         log.info("Событие обновлено пользователем, id: {}", updatedEvent.getId());
-        return eventMapper.toFullDto(updatedEvent);
+
+        EventFullDto dto = eventMapper.toFullDto(updatedEvent);
+
+        try {
+            CategoryDto categoryDto = categoryClient.getCategory(updatedEvent.getCategory());
+            dto.setCategory(categoryDto);
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить данные категории для события {}", updatedEvent.getId());
+        }
+
+        return dto;
     }
 
     @Override
@@ -163,7 +203,21 @@ public class EventServiceImpl implements EventService {
         LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, FORMATTER) : null;
 
         Page<Event> events = eventRepository.findAdminEvents(users, stateList, categories, start, end, pageable);
-        return eventMapper.toFullDto(events.getContent());
+
+        List<Event> eventList = events.getContent();
+        for (Event event : eventList) {
+            try {
+                Long confirmedRequests = requestClient.getConfirmedRequests(event.getId());
+                event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+            } catch (Exception e) {
+                log.warn("Не удалось получить количество подтверждённых запросов для события {}", event.getId());
+            }
+        }
+
+        List<EventFullDto> dtos = eventMapper.toFullDto(eventList);
+        enrichFullEventsWithCategories(dtos);
+
+        return dtos;
     }
 
     @Override
@@ -209,8 +263,23 @@ public class EventServiceImpl implements EventService {
         Event updatedEvent = eventRepository.save(event);
         log.info("Событие обновлено администратором, id: {}", updatedEvent.getId());
 
+        try {
+            Long confirmedRequests = requestClient.getConfirmedRequests(eventId);
+            updatedEvent.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+        } catch (Exception e) {
+            log.warn("Не удалось получить количество подтверждённых запросов для события {}", eventId);
+        }
+
         EventFullDto dto = eventMapper.toFullDto(updatedEvent);
-        dto.setConfirmedRequests(event.getConfirmedRequests());
+        dto.setConfirmedRequests(updatedEvent.getConfirmedRequests());
+
+        try {
+            CategoryDto categoryDto = categoryClient.getCategory(updatedEvent.getCategory());
+            dto.setCategory(categoryDto);
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить данные категории для события {}", updatedEvent.getId());
+        }
+
         return dto;
     }
 
@@ -283,12 +352,19 @@ public class EventServiceImpl implements EventService {
 
             Map<Long, Long> viewsMap = getViewsForEvents(eventIds);
 
-            events.forEach(event -> {
+            for (Event event : events) {
                 Long views = viewsMap.get(event.getId());
                 if (views != null) {
                     event.setViews(views);
                 }
-            });
+
+                try {
+                    Long confirmedRequests = requestClient.getConfirmedRequests(event.getId());
+                    event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+                } catch (Exception e) {
+                    log.warn("Не удалось получить количество подтверждённых запросов для события {}", event.getId());
+                }
+            }
 
             if (onlyAvailable != null && onlyAvailable) {
                 events = events.stream()
@@ -305,7 +381,10 @@ public class EventServiceImpl implements EventService {
                 }
             }
 
-            return eventMapper.toShortDto(events);
+            List<EventShortDto> dtos = eventMapper.toShortDto(events);
+            enrichEventsWithCategories(dtos);
+
+            return dtos;
 
         } catch (ResponseStatusException e) {
             throw e;
@@ -369,16 +448,33 @@ public class EventServiceImpl implements EventService {
             event.setViews(event.getViews() == null ? 1 : event.getViews() + 1);
         }
 
+        try {
+            Long confirmedRequests = requestClient.getConfirmedRequests(eventId);
+            event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+            log.info("Получено подтверждённых запросов для события {}: {}", eventId, event.getConfirmedRequests());
+        } catch (Exception e) {
+            log.warn("Не удалось получить количество подтверждённых запросов для события {}: {}", eventId, e.getMessage());
+        }
+
         eventRepository.save(event);
 
-        return eventMapper.toFullDto(event);
+        EventFullDto dto = eventMapper.toFullDto(event);
+
+        try {
+            CategoryDto categoryDto = categoryClient.getCategory(event.getCategory());
+            dto.setCategory(categoryDto);
+        } catch (Exception e) {
+            log.warn("Не удалось загрузить данные категории для события {}", eventId);
+        }
+
+        return dto;
     }
 
     private void updateEventFields(Event event, UpdateEventUserRequest request) {
         if (request.getAnnotation() != null) event.setAnnotation(request.getAnnotation());
         if (request.getCategory() != null) {
             CategoryDto categoryDto = categoryClient.getCategory(request.getCategory());
-            event.setCategory(Category.builder().id(categoryDto.getId()).build());
+            event.setCategory(categoryDto.getId());
         }
         if (request.getDescription() != null) event.setDescription(request.getDescription());
         if (request.getEventDate() != null) event.setEventDate(request.getEventDate());
@@ -393,7 +489,7 @@ public class EventServiceImpl implements EventService {
         if (request.getAnnotation() != null) event.setAnnotation(request.getAnnotation());
         if (request.getCategory() != null) {
             CategoryDto categoryDto = categoryClient.getCategory(request.getCategory());
-            event.setCategory(Category.builder().id(categoryDto.getId()).build());
+            event.setCategory(categoryDto.getId());
         }
         if (request.getDescription() != null) event.setDescription(request.getDescription());
         if (request.getEventDate() != null) event.setEventDate(request.getEventDate());
@@ -454,5 +550,108 @@ public class EventServiceImpl implements EventService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    @Override
+    public List<EventFullDto> getEventsByIds(List<Long> ids) {
+        log.info("Получение событий по списку ID: {}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Event> events = eventRepository.findAllById(ids);
+
+        Map<Long, Long> viewsMap = getViewsForEvents(ids);
+
+        for (Event event : events) {
+            Long views = viewsMap.get(event.getId());
+            if (views != null) {
+                event.setViews(views);
+            }
+
+            try {
+                Long confirmedRequests = requestClient.getConfirmedRequests(event.getId());
+                event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
+            } catch (Exception e) {
+                log.warn("Не удалось получить количество подтверждённых запросов для события {}", event.getId());
+            }
+        }
+
+        Map<Long, Event> eventMap = events.stream()
+                .collect(Collectors.toMap(Event::getId, event -> event));
+
+        List<Event> sortedEvents = ids.stream()
+                .map(eventMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        List<EventFullDto> dtos = eventMapper.toFullDto(sortedEvents);
+        enrichFullEventsWithCategories(dtos);
+
+        log.info("Найдено событий: {} из {}", dtos.size(), ids.size());
+        return dtos;
+    }
+
+    private void enrichEventsWithCategories(List<EventShortDto> dtos) {
+        Set<Long> categoryIds = dtos.stream()
+                .map(dto -> dto.getCategory() != null ? dto.getCategory().getId() : null)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (categoryIds.isEmpty()) return;
+
+        Map<Long, CategoryDto> categoryMap = new HashMap<>();
+        for (Long categoryId : categoryIds) {
+            try {
+                CategoryDto categoryDto = categoryClient.getCategory(categoryId);
+                categoryMap.put(categoryId, categoryDto);
+            } catch (Exception e) {
+                log.warn("Не удалось загрузить категорию с id {}", categoryId);
+            }
+        }
+
+        dtos.forEach(dto -> {
+            if (dto.getCategory() != null) {
+                CategoryDto fullCategory = categoryMap.get(dto.getCategory().getId());
+                if (fullCategory != null) {
+                    dto.setCategory(fullCategory);
+                }
+            }
+        });
+    }
+
+    private void enrichFullEventsWithCategories(List<EventFullDto> dtos) {
+        Set<Long> categoryIds = dtos.stream()
+                .map(dto -> dto.getCategory() != null ? dto.getCategory().getId() : null)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (categoryIds.isEmpty()) return;
+
+        Map<Long, CategoryDto> categoryMap = new HashMap<>();
+        for (Long categoryId : categoryIds) {
+            try {
+                CategoryDto categoryDto = categoryClient.getCategory(categoryId);
+                categoryMap.put(categoryId, categoryDto);
+            } catch (Exception e) {
+                log.warn("Не удалось загрузить категорию с id {}", categoryId);
+            }
+        }
+
+        dtos.forEach(dto -> {
+            if (dto.getCategory() != null) {
+                CategoryDto fullCategory = categoryMap.get(dto.getCategory().getId());
+                if (fullCategory != null) {
+                    dto.setCategory(fullCategory);
+                }
+            }
+        });
+    }
+
+    @Override
+    public boolean existsEventsByCategoryId(Long catId) {
+        log.info("Проверка существования событий для категории: {}", catId);
+        return eventRepository.existsByCategory(catId);
     }
 }

@@ -29,4 +29,8 @@ public interface EventService {
                                          HttpServletRequest request);
 
     EventFullDto getPublicEvent(Long eventId, HttpServletRequest request);
+
+    List<EventFullDto> getEventsByIds(List<Long> ids);
+
+    boolean existsEventsByCategoryId(Long catId);
 }

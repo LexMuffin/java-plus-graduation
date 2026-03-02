@@ -4,7 +4,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import ru.yandex.practicum.dto.category.CategoryDto;
-import ru.yandex.practicum.category.model.Category;
 import ru.yandex.practicum.dto.event.EventFullDto;
 import ru.yandex.practicum.dto.event.EventShortDto;
 import ru.yandex.practicum.dto.event.LocationDto;
@@ -25,16 +24,16 @@ public interface EventMapper {
     @Mapping(target = "publishedOn", ignore = true)
     @Mapping(target = "state", constant = "PENDING")
     @Mapping(target = "views", constant = "0L")
-    @Mapping(target = "category", source = "category", qualifiedByName = "mapIdToCategory")
+    @Mapping(target = "category", source = "category")
     Event toEntity(NewEventDto dto);
 
-    @Mapping(target = "category", source = "category", qualifiedByName = "mapCategoryToDto")
+    @Mapping(target = "category", source = "event", qualifiedByName = "mapCategoryToDto")
     @Mapping(target = "initiator", source = "initiator", qualifiedByName = "mapLongToUserShortDto")
     EventFullDto toFullDto(Event event);
 
     List<EventFullDto> toFullDto(List<Event> events);
 
-    @Mapping(target = "category", source = "category", qualifiedByName = "mapCategoryToDto")
+    @Mapping(target = "category", source = "event", qualifiedByName = "mapCategoryToDto")
     EventShortDto toShortDto(Event event);
 
     List<EventShortDto> toShortDto(List<Event> events);
@@ -44,18 +43,11 @@ public interface EventMapper {
     Location toLocation(LocationDto dto);
 
     @Named("mapCategoryToDto")
-    default CategoryDto mapCategoryToDto(Category category) {
-        if (category == null) return null;
+    default CategoryDto mapCategoryToDto(Event event) {
+        if (event == null || event.getCategory() == null) return null;
         return CategoryDto.builder()
-                .id(category.getId())
-                .name(category.getName())
+                .id(event.getCategory())
                 .build();
-    }
-
-    @Named("mapIdToCategory")
-    default Category mapIdToCategory(Long id) {
-        if (id == null) return null;
-        return Category.builder().id(id).build();
     }
 
     @Named("mapLongToUserShortDto")

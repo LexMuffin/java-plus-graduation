@@ -19,7 +19,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             SELECT e FROM Event e
             WHERE (COALESCE(:users) IS NULL OR e.initiator IN :users)
             AND (COALESCE(:states) IS NULL OR e.state IN :states)
-            AND (COALESCE(:categories) IS NULL OR e.category.id IN :categories)
+            AND (COALESCE(:categories) IS NULL OR e.category IN :categories)
             AND (CAST(:rangeStart AS timestamp) IS NULL OR e.eventDate >= :rangeStart)
             AND (CAST(:rangeEnd AS timestamp) IS NULL OR e.eventDate <= :rangeEnd)
             """)
@@ -36,7 +36,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             AND (:text IS NULL OR :text = '' 
                  OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%')) 
                  OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%')))
-            AND (:categories IS NULL OR e.category.id IN :categories)
+            AND (:categories IS NULL OR e.category IN :categories)
             AND (:paid IS NULL OR e.paid = :paid)
             AND e.eventDate >= :rangeStart
             AND e.eventDate <= :rangeEnd
@@ -48,5 +48,5 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                  @Param("rangeEnd") LocalDateTime rangeEnd,
                                  Pageable pageable);
 
-    boolean existsByCategoryId(Long categoryId);
+    boolean existsByCategory(Long categoryId);
 }

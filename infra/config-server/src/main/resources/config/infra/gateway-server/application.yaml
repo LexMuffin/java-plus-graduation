@@ -6,7 +6,7 @@ spring:
           enabled: false
       routes:
         - id: public_categories_route
-          uri: lb://event-service
+          uri: lb://category-service
           predicates:
             - Path=/categories, /categories/**
 
@@ -20,15 +20,18 @@ spring:
           predicates:
             - Path=/events, /events/**
 
+        - id: private_user_requests_route
+          uri: lb://request-service
+          predicates:
+            - Path=/users/{userId}/events/{eventId}/requests,
+              /users/{userId}/events/{eventId}/requests/**,
+              /users/{userId}/requests,
+              /users/{userId}/requests/**
+
         - id: private_user_events_route
           uri: lb://event-service
           predicates:
             - Path=/users/{userId}/events, /users/{userId}/events/**
-
-        - id: private_user_requests_route
-          uri: lb://request-service
-          predicates:
-            - Path=/users/{userId}/requests, /users/{userId}/requests/**, /users/{userId}/events/{eventId}/requests, /users/{userId}/events/{eventId}/requests/**
 
         - id: admin_users_route
           uri: lb://user-service
@@ -36,7 +39,7 @@ spring:
             - Path=/admin/users, /admin/users/**
 
         - id: admin_categories_route
-          uri: lb://event-service
+          uri: lb://category-service
           predicates:
             - Path=/admin/categories, /admin/categories/**
 

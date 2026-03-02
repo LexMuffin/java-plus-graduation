@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>event_service</artifactId>
+    <artifactId>category-service</artifactId>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -102,12 +102,6 @@
             <artifactId>interaction-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>ru.practicum</groupId>
-            <artifactId>category-service</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -145,7 +139,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>ru.yandex.practicum.EventServiceApplication</mainClass>
+                    <mainClass>ru.yandex.practicum.CategoryServiceApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -163,4 +157,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

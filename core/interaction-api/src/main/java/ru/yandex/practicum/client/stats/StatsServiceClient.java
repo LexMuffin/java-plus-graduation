@@ -10,17 +10,17 @@ import ru.yandex.practicum.dto.ViewStatsDto;
 
 import java.util.List;
 
-@FeignClient(name = "stats-service", path = "/stats")
+@FeignClient(name = "stats-service")
 public interface StatsServiceClient {
 
     @PostMapping("/hit")
     void saveHit(@RequestBody EndpointHitDto hitDto);
 
-    @GetMapping
+    @GetMapping("/stats")
     List<ViewStatsDto> getStats(
             @RequestParam("start") String start,
             @RequestParam("end") String end,
-            @RequestParam("uris") List<String> uris,
-            @RequestParam("unique") Boolean unique
+            @RequestParam(value = "uris", required = false) List<String> uris,
+            @RequestParam(value = "unique", defaultValue = "false") Boolean unique
     );
 }

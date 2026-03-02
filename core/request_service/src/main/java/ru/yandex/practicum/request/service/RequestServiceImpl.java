@@ -24,6 +24,7 @@ import ru.yandex.practicum.request.repository.ParticipationRequestRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import feign.FeignException;
 
 @Slf4j
 @Service
@@ -41,9 +42,27 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         log.info("Создание запроса: user={}, event={}", userId, eventId);
 
-        UserDto userDto = userClient.getUser(userId);
+        UserDto userDto;
+        try {
+            userDto = userClient.getUser(userId);
+        } catch (FeignException.NotFound e) {
+            log.error("Пользователь с id {} не найден", userId);
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+        } catch (FeignException e) {
+            log.error("Ошибка при обращении к user-service: {}", e.getMessage());
+            throw new RuntimeException("Ошибка при проверке пользователя", e);
+        }
 
-        EventFullDto eventDto = eventClient.getEvent(eventId);
+        EventFullDto eventDto;
+        try {
+            eventDto = eventClient.getEvent(eventId);
+        } catch (FeignException.NotFound e) {
+            log.error("Событие с id {} не найдено", eventId);
+            throw new NotFoundException("Событие с id=" + eventId + " не найдено");
+        } catch (FeignException e) {
+            log.error("Ошибка при обращении к event-service: {}", e.getMessage());
+            throw new RuntimeException("Ошибка при проверке события", e);
+        }
 
         if (eventDto.getInitiator().getId().equals(userId)) {
             log.error("Инициатор не может подать заявку");
@@ -99,9 +118,12 @@ public class RequestServiceImpl implements RequestService {
 
         try {
             userClient.getUser(userId);
-        } catch (Exception e) {
+        } catch (FeignException.NotFound e) {
             log.error("Пользователь не найден: {}", userId);
-            throw new NotFoundException("Пользователь не найден");
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+        } catch (FeignException e) {
+            log.error("Ошибка при обращении к user-service: {}", e.getMessage());
+            throw new RuntimeException("Ошибка при проверке пользователя", e);
         }
 
         return requestMapper.toDto(requestRepository.findByRequester(userId));
@@ -115,12 +137,12 @@ public class RequestServiceImpl implements RequestService {
         ParticipationRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> {
                     log.error("Запрос не найден: {}", requestId);
-                    return new NotFoundException("Запрос не найден");
+                    return new NotFoundException("Запрос с id=" + requestId + " не найден");
                 });
 
         if (!request.getRequester().equals(userId)) {
             log.error("Доступ запрещен");
-            throw new NotFoundException("Запрос не найден");
+            throw new NotFoundException("Запрос с id=" + requestId + " не найден");
         }
 
         request.setStatus(RequestStatus.CANCELED);
@@ -134,11 +156,20 @@ public class RequestServiceImpl implements RequestService {
     public List<ParticipationRequestDto> getEventRequests(Long userId, Long eventId) {
         log.info("Запросы на событие: user={}, event={}", userId, eventId);
 
-        EventFullDto eventDto = eventClient.getEvent(eventId);
+        EventFullDto eventDto;
+        try {
+            eventDto = eventClient.getEvent(eventId);
+        } catch (FeignException.NotFound e) {
+            log.error("Событие с id {} не найдено", eventId);
+            throw new NotFoundException("Событие с id=" + eventId + " не найдено");
+        } catch (FeignException e) {
+            log.error("Ошибка при обращении к event-service: {}", e.getMessage());
+            throw new RuntimeException("Ошибка при проверке события", e);
+        }
 
         if (!eventDto.getInitiator().getId().equals(userId)) {
             log.error("Доступ запрещен");
-            throw new NotFoundException("Событие не найдено");
+            throw new NotFoundException("Событие с id=" + eventId + " не найдено");
         }
 
         return requestMapper.toDto(requestRepository.findByEvent(eventId));
@@ -150,7 +181,16 @@ public class RequestServiceImpl implements RequestService {
                                                               EventRequestStatusUpdateRequest request) {
         log.info("Обновление статусов: user={}, event={}, status={}", userId, eventId, request.getStatus());
 
-        EventFullDto eventDto = eventClient.getEvent(eventId);
+        EventFullDto eventDto;
+        try {
+            eventDto = eventClient.getEvent(eventId);
+        } catch (FeignException.NotFound e) {
+            log.error("Событие с id {} не найдено", eventId);
+            throw new NotFoundException("Событие с id=" + eventId + " не найдено");
+        } catch (FeignException e) {
+            log.error("Ошибка при обращении к event-service: {}", e.getMessage());
+            throw new RuntimeException("Ошибка при проверке события", e);
+        }
 
         if (!eventDto.getInitiator().getId().equals(userId)) {
             log.error("Доступ запрещен");
@@ -208,5 +248,11 @@ public class RequestServiceImpl implements RequestService {
                 .confirmedRequests(requestMapper.toDto(confirmedList))
                 .rejectedRequests(requestMapper.toDto(rejectedList))
                 .build();
+    }
+
+    @Override
+    public Long getConfirmedRequests(Long eventId) {
+        log.info("Получение количества подтверждённых запросов для события {}", eventId);
+        return requestRepository.countConfirmedByEventId(eventId);
     }
 }

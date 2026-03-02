@@ -25,35 +25,11 @@ logbook:
   format:
     style: http
 
-#logging:
-#  level:
-#    org.springframework.web: INFO
-#    org.springframework.orm.jpa: INFO
-#    org.springframework.transaction: INFO
-#    org.springframework.transaction.interceptor: INFO
-#    org.springframework.orm.jpa.JpaTransactionManager: INFO
-#    org.zalando.logbook: TRACE
-
 logging:
   level:
-    org.springframework.web: DEBUG
-    org.springframework.web.servlet: DEBUG
-    org.springframework.web.client: DEBUG
-    org.springframework.web.reactive: DEBUG
-
-    org.springframework.cloud.openfeign: DEBUG
-    feign: DEBUG
-    com.netflix: DEBUG
-
-    ru.yandex.practicum: DEBUG
-
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql: TRACE
-    org.springframework.orm.jpa: DEBUG
-    org.springframework.transaction: DEBUG
-
-    com.netflix.discovery: DEBUG
-    com.netflix.eureka: DEBUG
-
-    org.springframework.cloud.gateway: DEBUG
-    reactor.netty: DEBUG
+    org.springframework.web: INFO
+    org.springframework.orm.jpa: INFO
+    org.springframework.transaction: INFO
+    org.springframework.transaction.interceptor: INFO
+    org.springframework.orm.jpa.JpaTransactionManager: INFO
+    org.zalando.logbook: TRACE

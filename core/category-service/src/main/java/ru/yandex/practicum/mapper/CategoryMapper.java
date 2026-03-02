@@ -1,9 +1,9 @@
-package ru.yandex.practicum.category.mapper;
+package ru.yandex.practicum.mapper;
 
 import org.mapstruct.Mapper;
 import ru.yandex.practicum.dto.category.CategoryDto;
 import ru.yandex.practicum.dto.category.NewCategoryDto;
-import ru.yandex.practicum.category.model.Category;
+import ru.yandex.practicum.model.Category;
 
 import java.util.List;
 

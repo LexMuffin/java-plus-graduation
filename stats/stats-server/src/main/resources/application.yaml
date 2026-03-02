@@ -1,6 +1,6 @@
 spring:
   application:
-    name: stats-server
+    name: stats-service
   config:
     import: "configserver:"
   cloud:
@@ -21,4 +21,3 @@ eureka:
     preferIpAddress: true
     hostname: localhost
     instance-id: "${spring.application.name}:${random.value}"
-    leaseRenewalIntervalInSeconds: 10

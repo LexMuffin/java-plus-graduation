@@ -1,5 +1,4 @@
-package ru.yandex.practicum.request;
-
+package ru.yandex.practicum;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,13 +9,9 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "ru.yandex.practicum.client")
-@ComponentScan(basePackages = {
-        "ru.yandex.practicum.request",
-        "ru.yandex.practicum.client",
-        "ru.yandex.practicum.exception"
-})
-public class RequestServiceApplication {
+@ComponentScan(basePackages = {"ru.yandex.practicum", "ru.yandex.practicum.client"})
+public class CategoryServiceApplication {
     public static void main(String[] args) {
-        SpringApplication.run(ru.yandex.practicum.request.RequestServiceApplication.class, args);
+        SpringApplication.run(CategoryServiceApplication.class, args);
     }
 }

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import ru.yandex.practicum.category.model.Category;
 import ru.yandex.practicum.dto.event.EventState;
+import ru.yandex.practicum.model.Category;
 
 import java.time.LocalDateTime;
 
@@ -26,9 +26,8 @@ public class Event {
     @Column(length = 2000, nullable = false)
     String annotation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
-    Category category;
+    Long category;
 
     @Column(name = "confirmed_requests")
     @Builder.Default

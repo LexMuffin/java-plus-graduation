@@ -1,4 +1,4 @@
-package ru.yandex.practicum.category.service;
+package ru.yandex.practicum.service;
 
 import org.springframework.data.domain.Pageable;
 import ru.yandex.practicum.dto.category.CategoryDto;

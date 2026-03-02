@@ -25,6 +25,12 @@ public class PublicEventController {
 
     EventService eventService;
 
+    @GetMapping("/by-ids")
+    public List<EventFullDto> getEventsByIds(@RequestParam("ids") List<Long> ids) {
+        log.info("GET /events/by-ids with ids: {}", ids);
+        return eventService.getEventsByIds(ids);
+    }
+
     @GetMapping
     public List<EventShortDto> getEvents(
             @RequestParam(required = false) String text,
@@ -49,5 +55,11 @@ public class PublicEventController {
                                  HttpServletRequest request) {
         log.info("GET /events/{}", id);
         return eventService.getPublicEvent(id, request);
+    }
+
+    @GetMapping("/categories/{catId}/exists")
+    public boolean existsEventsByCategoryId(@PathVariable Long catId) {
+        log.info("GET /events/categories/{}/exists - проверка наличия событий для категории", catId);
+        return eventService.existsEventsByCategoryId(catId);
     }
 }

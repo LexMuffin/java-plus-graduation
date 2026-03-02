@@ -83,3 +83,20 @@ services:
       retries: 10
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  extra-db:
+    image: postgres:16.1
+    container_name: postgres-extra-db
+    ports:
+      - "6548:5432"
+    environment:
+      POSTGRES_USER: extra
+      POSTGRES_PASSWORD: extra
+      POSTGRES_DB: extra
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql

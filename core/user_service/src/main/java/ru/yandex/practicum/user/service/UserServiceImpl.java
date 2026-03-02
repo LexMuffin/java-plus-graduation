@@ -6,8 +6,10 @@ import lombok.experimental.FieldDefaults;
 import lombok.AccessLevel;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.dto.user.NewUserRequest;
@@ -40,7 +42,7 @@ public class UserServiceImpl implements UserService {
             return userMapper.toDto(saved);
         } catch (DataIntegrityViolationException e) {
             log.error("Email уже существует: {}", request.getEmail());
-            throw new ConflictException("Email должен быть уникальным");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email должен быть уникальным");
         }
     }
 

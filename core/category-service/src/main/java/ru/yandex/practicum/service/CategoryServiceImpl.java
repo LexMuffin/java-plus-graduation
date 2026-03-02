@@ -1,4 +1,4 @@
-package ru.yandex.practicum.category.service;
+package ru.yandex.practicum.service;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -8,11 +8,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.client.event.EventServiceClient;
 import ru.yandex.practicum.dto.category.CategoryDto;
 import ru.yandex.practicum.dto.category.NewCategoryDto;
-import ru.yandex.practicum.category.mapper.CategoryMapper;
-import ru.yandex.practicum.category.model.Category;
-import ru.yandex.practicum.category.repository.CategoryRepository;
+import ru.yandex.practicum.mapper.CategoryMapper;
+import ru.yandex.practicum.model.Category;
+import ru.yandex.practicum.repository.CategoryRepository;
 import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
 
@@ -27,6 +28,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     CategoryRepository categoryRepository;
     CategoryMapper categoryMapper;
+    EventServiceClient eventServiceClient;
 
     @Override
     @Transactional
@@ -76,6 +78,11 @@ public class CategoryServiceImpl implements CategoryService {
         if (!categoryRepository.existsById(catId)) {
             log.error("Не найдена id: {}", catId);
             throw new NotFoundException("Категория не найдена");
+        }
+
+        if (eventServiceClient.existsEventsByCategoryId(catId)) {
+            log.error("Категория с id {} используется в событиях", catId);
+            throw new ConflictException("Категория не может быть удалена, так как с ней связаны события");
         }
 
         categoryRepository.deleteById(catId);

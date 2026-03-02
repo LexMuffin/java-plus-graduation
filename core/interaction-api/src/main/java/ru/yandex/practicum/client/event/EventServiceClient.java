@@ -11,9 +11,12 @@ import java.util.List;
 @FeignClient(name = "event-service", path = "/events")
 public interface EventServiceClient {
 
+    @GetMapping("/by-ids")
+    List<EventFullDto> getEventsByIds(@RequestParam("ids") List<Long> ids);
+
     @GetMapping("/{id}")
     EventFullDto getEvent(@PathVariable("id") Long id);
 
-    @GetMapping("/by-ids")
-    List<EventFullDto> getEventsByIds(@RequestParam("ids") List<Long> ids);
+    @GetMapping("/categories/{catId}/exists")
+    boolean existsEventsByCategoryId(@RequestParam("catId") Long catId);
 }
