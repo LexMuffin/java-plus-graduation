@@ -422,16 +422,10 @@ public class EventServiceImpl implements EventService {
                     start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     List.of("/events/" + eventId),
-                    false
+                    true
             );
 
             long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
-
-            if (event.getViews() == null || event.getViews() == 0) {
-                if (views > 1) {
-                    views = 1;
-                }
-            }
 
             log.info("Установлено views = {} для события {}", views, eventId);
             event.setViews(views);
@@ -450,7 +444,6 @@ public class EventServiceImpl implements EventService {
 
         eventRepository.save(event);
 
-        // Обогащаем DTO
         EventFullDto dto = eventMapper.toFullDto(event);
         try {
             CategoryDto categoryDto = categoryClient.getCategory(event.getCategory());
