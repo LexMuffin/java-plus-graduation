@@ -2,6 +2,8 @@ package ru.yandex.practicum;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -25,12 +27,34 @@ public class StatsClientImpl implements StatsClient {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RestTemplate restTemplate;
+    private final DiscoveryClient discoveryClient;
 
     @Value("${stats-server.id:stats-server}")
     private String statServiceId;
 
-    public StatsClientImpl(RestTemplate restTemplate) {
+    public StatsClientImpl(RestTemplate restTemplate, DiscoveryClient discoveryClient) {
         this.restTemplate = restTemplate;
+        this.discoveryClient = discoveryClient;
+    }
+
+    private String getServiceUrl() {
+        try {
+            List<ServiceInstance> instances = discoveryClient.getInstances(statServiceId);
+            if (instances == null || instances.isEmpty()) {
+                throw new StatsServerUnavailableException(
+                        "Сервис статистики с id '" + statServiceId + "' не найден"
+                );
+            }
+            ServiceInstance instance = instances.get(0);
+            String url = instance.getUri().toString();
+            log.debug("Получен URL сервиса статистики: {}", url);
+            return url;
+        } catch (Exception e) {
+            log.error("Ошибка получения URL сервиса статистики: {}", e.getMessage());
+            throw new StatsServerUnavailableException(
+                    "Не удалось получить URL сервиса статистики: " + e.getMessage()
+            );
+        }
     }
 
     @Override
@@ -38,8 +62,7 @@ public class StatsClientImpl implements StatsClient {
         log.info("Сохранение хита: {}", hitDto);
 
         try {
-            // Используем имя сервиса в URL
-            String url = String.format("http://%s/hit", statServiceId);
+            String url = getServiceUrl() + "/hit";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -115,9 +138,8 @@ public class StatsClientImpl implements StatsClient {
     }
 
     private String buildStatsUrl(String start, String end, List<String> uris, Boolean unique) {
-        StringBuilder url = new StringBuilder();
-        url.append(String.format("http://%s/stats?start=%s&end=%s",
-                statServiceId, start, end));
+        String baseUrl = getServiceUrl();
+        StringBuilder url = new StringBuilder(baseUrl + "/stats?start=" + start + "&end=" + end);
 
         if (uris != null && !uris.isEmpty()) {
             url.append("&uris=").append(String.join(",", uris));
