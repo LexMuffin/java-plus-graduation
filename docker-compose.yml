@@ -14,17 +14,62 @@ services:
       interval: 5s
       retries: 10
 
-  ewm-db:
+  category-db:
     image: postgres:16.1
-    container_name: postgres-ewm-main-db
+    container_name: postgres-ewm-category-db
     ports:
-      - "5433:5432"
+      - "6544:5432"
     environment:
-      POSTGRES_USER: postgres_main
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ewm_main
+      POSTGRES_USER: category
+      POSTGRES_PASSWORD: category
+      POSTGRES_DB: category
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  event-db:
+    image: postgres:16.1
+    container_name: postgres-ewm-event-db
+    ports:
+      - "6545:5432"
+    environment:
+      POSTGRES_USER: event
+      POSTGRES_PASSWORD: event
+      POSTGRES_DB: event
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  request-db:
+    image: postgres:16.1
+    container_name: postgres-ewm-request-db
+    ports:
+      - "6546:5432"
+    environment:
+      POSTGRES_USER: request
+      POSTGRES_PASSWORD: request
+      POSTGRES_DB: request
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  user-db:
+    image: postgres:16.1
+    container_name: postgres-ewm-user-db
+    ports:
+      - "6547:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: user
+      POSTGRES_DB: user
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
       timeout: 5s
       interval: 5s
       retries: 10

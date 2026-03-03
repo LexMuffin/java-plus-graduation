@@ -4,12 +4,12 @@ server:
 spring:
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5433/ewm_main
-    username: postgres_main
-    password: postgres
+    url: jdbc:postgresql://localhost:5546/request
+    username: request
+    password: request
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
