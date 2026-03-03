@@ -44,7 +44,6 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public List<ViewStatsDto> getStats(String start, String end, List<String> uris, boolean unique) {
-
         LocalDateTime startTime = parseDateTime(start);
         LocalDateTime endTime = parseDateTime(end);
 
@@ -53,9 +52,19 @@ public class StatsServiceImpl implements StatsService {
         log.info("Запрос статистики: период {} - {}, uris: {}, unique: {}",
                 startTime, endTime, uris, unique);
 
-        List<ViewStatsDto> stats = unique
-                ? statsRepository.findUniqueStats(startTime, endTime, uris)
-                : statsRepository.findAllStats(startTime, endTime, uris);
+        List<ViewStatsDto> stats;
+
+        if (unique) {
+            log.info("Используем unique=true - считаем уникальные IP");
+            stats = statsRepository.findUniqueStats(startTime, endTime, uris);
+
+            stats.forEach(stat ->
+                    log.info("URI: {}, уникальных просмотров: {}", stat.getUri(), stat.getHits())
+            );
+        } else {
+            log.info("Используем unique=false - считаем все хиты");
+            stats = statsRepository.findAllStats(startTime, endTime, uris);
+        }
 
         log.debug("Найдено записей: {}", stats.size());
         return stats;
