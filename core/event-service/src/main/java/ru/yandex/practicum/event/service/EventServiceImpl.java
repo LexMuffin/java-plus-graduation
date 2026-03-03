@@ -434,36 +434,18 @@ public class EventServiceImpl implements EventService {
 
             List<String> uris = List.of("/events/" + eventId);
 
-            boolean isRecentlyPublished = event.getPublishedOn() != null &&
-                    ChronoUnit.SECONDS.between(event.getPublishedOn(), LocalDateTime.now()) < 5;
-
-            List<ViewStatsDto> allStats = statsClient.getStats(
+            List<ViewStatsDto> stats = statsClient.getStats(
                     start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     uris,
                     false
             );
 
-            long allViews = allStats.isEmpty() ? 0 : allStats.get(0).getHits();
-            log.info("Всего хитов (unique=false): {}", allViews);
-
-            long uniqueViews = 0;
-            if (isRecentlyPublished) {
-                List<ViewStatsDto> uniqueStats = statsClient.getStats(
-                        start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                        end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                        uris,
-                        true
-                );
-                uniqueViews = uniqueStats.isEmpty() ? 0 : uniqueStats.get(0).getHits();
-            }
-
-            long views;
-            if (isRecentlyPublished) {
-                views = allViews;
-            } else {
-                views = uniqueViews;
-            }
+            long views = Optional.ofNullable(stats)
+                    .filter(list -> !list.isEmpty())
+                    .map(list -> list.get(0))
+                    .map(ViewStatsDto::getHits)
+                    .orElse(0L);
 
             log.info("Установлено views = {} для события {}", views, eventId);
             event.setViews(views);
