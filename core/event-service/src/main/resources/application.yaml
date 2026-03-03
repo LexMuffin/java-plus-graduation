@@ -1,6 +1,6 @@
 spring:
   application:
-    name: user-service
+    name: event-service
   config:
     import: "configserver:"
   cloud:
@@ -12,8 +12,14 @@ spring:
       override-none: true
       override-system-properties: false
       allow-override: true
+  main:
+    allow-bean-definition-overriding: true
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    preferIpAddress: true
+    hostname: localhost
+    instance-id: "${spring.application.name}:${random.value}"

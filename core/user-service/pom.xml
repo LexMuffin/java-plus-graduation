@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>request_service</artifactId>
+    <artifactId>user-service</artifactId>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -107,19 +107,6 @@
             <artifactId>interaction-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <!-- Добавляем зависимости на модули с сущностями -->
-        <dependency>
-            <groupId>ru.practicum</groupId>
-            <artifactId>user_service</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ru.practicum</groupId>
-            <artifactId>event_service</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -150,7 +137,6 @@
                     </annotationProcessorPaths>
                     <compilerArgs>
                         <arg>-parameters</arg>
-                        <arg>-Amapstruct.verbose=true</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -158,7 +144,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>ru.yandex.practicum.RequestServiceApplication</mainClass>
+                    <mainClass>ru.yandex.practicum.UserServiceApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

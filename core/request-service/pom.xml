@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>event_service</artifactId>
+    <artifactId>request-service</artifactId>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -79,12 +79,17 @@
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-bootstrap</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.cloud</groupId>
+                    <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.github.resilience4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -102,11 +107,18 @@
             <artifactId>interaction-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- Добавляем зависимости на модули с сущностями -->
         <dependency>
             <groupId>ru.practicum</groupId>
-            <artifactId>category-service</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
+            <artifactId>user-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ru.practicum</groupId>
+            <artifactId>event-service</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -138,6 +150,7 @@
                     </annotationProcessorPaths>
                     <compilerArgs>
                         <arg>-parameters</arg>
+                        <arg>-Amapstruct.verbose=true</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -145,7 +158,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>ru.yandex.practicum.EventServiceApplication</mainClass>
+                    <mainClass>ru.yandex.practicum.RequestServiceApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
