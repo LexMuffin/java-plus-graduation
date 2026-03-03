@@ -1,3 +1,6 @@
+server:
+  port: 8080
+
 spring:
   cloud:
     gateway:
@@ -57,9 +60,6 @@ spring:
           uri: lb://stats-service
           predicates:
             - Path=/stats, /stats/**
-
-server:
-  port: 8080
 
 logging:
   level:
