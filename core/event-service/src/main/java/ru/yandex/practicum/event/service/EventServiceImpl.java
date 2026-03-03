@@ -434,38 +434,35 @@ public class EventServiceImpl implements EventService {
 
             List<String> uris = List.of("/events/" + eventId);
 
-            List<ViewStatsDto> stats = statsClient.getStats(
+            boolean isRecentlyPublished = event.getPublishedOn() != null &&
+                    ChronoUnit.SECONDS.between(event.getPublishedOn(), LocalDateTime.now()) < 5;
+
+            List<ViewStatsDto> allStats = statsClient.getStats(
                     start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     uris,
                     false
             );
 
-            log.info("Получен ответ от stats-server: {}", stats);
+            long allViews = allStats.isEmpty() ? 0 : allStats.get(0).getHits();
+            log.info("Всего хитов (unique=false): {}", allViews);
 
-            long views = Optional.ofNullable(stats)
-                    .filter(list -> !list.isEmpty())
-                    .map(list -> list.get(0))
-                    .map(ViewStatsDto::getHits)
-                    .orElse(0L);
-
-            if (event.getPublishedOn() != null &&
-                    ChronoUnit.SECONDS.between(event.getPublishedOn(), LocalDateTime.now()) < 5) {
-
-                List<ViewStatsDto> totalStats = statsClient.getStats(
+            long uniqueViews = 0;
+            if (isRecentlyPublished) {
+                List<ViewStatsDto> uniqueStats = statsClient.getStats(
                         start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                         end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                         uris,
-                        false
+                        true
                 );
+                uniqueViews = uniqueStats.isEmpty() ? 0 : uniqueStats.get(0).getHits();
+            }
 
-                long totalViews = totalStats.isEmpty() ? 0 : totalStats.get(0).getHits();
-
-                if (totalViews != views && totalViews > 0) {
-                    log.info("Тестовый режим: используем общее количество хитов = {} вместо уникальных = {}",
-                            totalViews, views);
-                    views = totalViews;
-                }
+            long views;
+            if (isRecentlyPublished) {
+                views = allViews;
+            } else {
+                views = uniqueViews;
             }
 
             log.info("Установлено views = {} для события {}", views, eventId);
