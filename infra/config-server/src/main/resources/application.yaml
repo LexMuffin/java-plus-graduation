@@ -13,7 +13,7 @@ spring:
             - classpath:config/infra/{application}
 
 server:
-  port: 8888
+  port: 0
 
 eureka:
   client:
