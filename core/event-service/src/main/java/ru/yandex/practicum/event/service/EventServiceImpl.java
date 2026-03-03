@@ -437,7 +437,7 @@ public class EventServiceImpl implements EventService {
                     start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     uris,
-                    true
+                    false
             );
 
             log.info("Получен ответ от stats-server: {}", stats);
