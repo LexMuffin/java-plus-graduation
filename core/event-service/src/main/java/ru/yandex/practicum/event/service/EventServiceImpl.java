@@ -440,12 +440,20 @@ public class EventServiceImpl implements EventService {
                     true
             );
 
-            long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
+            log.info("Получен ответ от stats-server: {}", stats);
+
+            long views = Optional.ofNullable(stats)
+                    .filter(list -> !list.isEmpty())
+                    .map(list -> list.get(0))
+                    .map(ViewStatsDto::getHits)
+                    .orElse(0L);
+
+            log.info("Установлено views = {} для события {}", views, eventId);
             event.setViews(views);
 
         } catch (Exception e) {
-            log.error("Ошибка при получении статистики просмотров: {}", e.getMessage());
             event.setViews(event.getViews() == null ? 1 : event.getViews() + 1);
+            log.info("Ручное увеличение views до {} для события {}", event.getViews(), eventId);
         }
 
         try {
