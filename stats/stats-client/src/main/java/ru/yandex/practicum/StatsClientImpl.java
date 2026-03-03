@@ -29,7 +29,7 @@ public class StatsClientImpl implements StatsClient {
     private final RestTemplate restTemplate;
     private final DiscoveryClient discoveryClient;
 
-    @Value("${stats-server.id:stats-server}")
+    @Value("${stats-server.id:stats-service}")
     private String statServiceId;
 
     public StatsClientImpl(RestTemplate restTemplate, DiscoveryClient discoveryClient) {
