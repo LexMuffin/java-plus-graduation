@@ -59,7 +59,7 @@ spring:
         - id: internal_stats_route
           uri: lb://stats-service
           predicates:
-            - Path=/stats, /stats/**
+            - Path=/stats, /stats/**, /hit/**
 
 logging:
   level:
