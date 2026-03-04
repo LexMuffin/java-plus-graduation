@@ -9,8 +9,8 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import ru.yandex.practicum.dto.EndpointHitDto;
-import ru.yandex.practicum.dto.ViewStatsDto;
+import ru.yandex.practicum.dto.stats.EndpointHitDto;
+import ru.yandex.practicum.dto.stats.ViewStatsDto;
 import ru.yandex.practicum.exception.StatsServerUnavailableException;
 import ru.yandex.practicum.exception.InvalidRequestException;
 
