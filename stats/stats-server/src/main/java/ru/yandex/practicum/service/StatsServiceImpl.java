@@ -18,11 +18,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Transactional(readOnly = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class StatsServiceImpl implements StatsService {
 
     private static final DateTimeFormatter FORMATTER =
@@ -34,54 +34,65 @@ public class StatsServiceImpl implements StatsService {
     @Override
     @Transactional
     public void hit(EndpointHitDto dto) {
-        validateHit(dto);
+        log.info("Сохранение хита: {}", dto);
 
-        log.debug("Сохранение просмотра: {}", dto);
-        EndpointHit entity = statsMapper.toEntity(dto);
-        statsRepository.save(entity);
+        try {
+            if (dto == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "DTO не может быть null");
+            }
 
-        log.info("Просмотр успешно сохранен с ID: {}", entity.getId());
+            EndpointHit entity = statsMapper.toEntity(dto);
+
+            if (entity.getTimestamp() == null) {
+                entity.setTimestamp(LocalDateTime.now());
+            }
+
+            EndpointHit saved = statsRepository.save(entity);
+            log.info("Хит сохранен с ID: {}", saved.getId());
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Ошибка при сохранении хита: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Внутренняя ошибка сервера: " + e.getMessage());
+        }
     }
 
     @Override
     public List<ViewStatsDto> getStats(String start, String end, List<String> uris, boolean unique) {
-        LocalDateTime startTime = parseDateTime(start);
-        LocalDateTime endTime = parseDateTime(end);
+        log.info("Получение статистики: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
 
-        validateDateRange(startTime, endTime);
+        try {
+            LocalDateTime startTime = parseDateTime(start);
+            LocalDateTime endTime = parseDateTime(end);
 
-        log.info("Запрос статистики: период {} - {}, uris: {}, unique: {}",
-                startTime, endTime, uris, unique);
+            validateDateRange(startTime, endTime);
 
-        List<ViewStatsDto> stats = unique
-                ? statsRepository.findUniqueStats(startTime, endTime, uris)
-                : statsRepository.findAllStats(startTime, endTime, uris);
+            List<ViewStatsDto> stats;
+            if (unique) {
+                stats = statsRepository.findUniqueStats(startTime, endTime, uris);
+            } else {
+                stats = statsRepository.findAllStats(startTime, endTime, uris);
+            }
 
-        log.debug("Найдено записей: {}", stats.size());
-        return stats;
-    }
+            log.info("Найдено записей: {}", stats.size());
+            return stats;
 
-    private void validateHit(EndpointHitDto dto) {
-        if (dto == null) {
-            log.error("Попытка сохранения null-объекта");
-            throw new IllegalArgumentException("DTO не может быть null");
-        }
-
-        if (dto.getApp() == null || dto.getApp().isBlank()) {
-            throw new IllegalArgumentException("app не может быть пустым");
-        }
-        if (dto.getUri() == null || dto.getUri().isBlank()) {
-            throw new IllegalArgumentException("uri не может быть пустым");
-        }
-        if (dto.getIp() == null || dto.getIp().isBlank()) {
-            throw new IllegalArgumentException("ip не может быть пустым");
-        }
-        if (dto.getTimestamp() == null) {
-            throw new IllegalArgumentException("timestamp не может быть null");
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Ошибка при получении статистики: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Внутренняя ошибка сервера: " + e.getMessage());
         }
     }
 
     private LocalDateTime parseDateTime(String dateTime) {
+        if (dateTime == null || dateTime.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Дата не может быть пустой");
+        }
+
         try {
             String decoded = java.net.URLDecoder.decode(dateTime, "UTF-8");
             return LocalDateTime.parse(decoded, FORMATTER);
@@ -91,7 +102,7 @@ public class StatsServiceImpl implements StatsService {
             } catch (Exception ex) {
                 log.error("Ошибка парсинга даты: {}", dateTime);
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss");
+                        "Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss, получено: " + dateTime);
             }
         }
     }
@@ -102,7 +113,6 @@ public class StatsServiceImpl implements StatsService {
                     "Даты начала и окончания должны быть указаны");
         }
         if (end.isBefore(start)) {
-            log.error("Некорректный диапазон: start={}, end={}", start, end);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Дата начала должна быть раньше даты окончания");
         }
