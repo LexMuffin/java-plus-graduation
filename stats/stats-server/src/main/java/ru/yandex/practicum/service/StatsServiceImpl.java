@@ -29,6 +29,7 @@ public class StatsServiceImpl implements StatsService {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     StatsRepository statsRepository;
+    StatsMapper statsMapper;
 
     @Override
     @Transactional
@@ -36,7 +37,7 @@ public class StatsServiceImpl implements StatsService {
         validateHit(dto);
 
         log.debug("Сохранение просмотра: {}", dto);
-        EndpointHit entity = StatsMapper.INSTANCE.toEntity(dto);
+        EndpointHit entity = statsMapper.toEntity(dto);
         statsRepository.save(entity);
 
         log.info("Просмотр успешно сохранен с ID: {}", entity.getId());
@@ -65,18 +66,41 @@ public class StatsServiceImpl implements StatsService {
             log.error("Попытка сохранения null-объекта");
             throw new IllegalArgumentException("DTO не может быть null");
         }
+
+        if (dto.getApp() == null || dto.getApp().isBlank()) {
+            throw new IllegalArgumentException("app не может быть пустым");
+        }
+        if (dto.getUri() == null || dto.getUri().isBlank()) {
+            throw new IllegalArgumentException("uri не может быть пустым");
+        }
+        if (dto.getIp() == null || dto.getIp().isBlank()) {
+            throw new IllegalArgumentException("ip не может быть пустым");
+        }
+        if (dto.getTimestamp() == null) {
+            throw new IllegalArgumentException("timestamp не может быть null");
+        }
     }
 
     private LocalDateTime parseDateTime(String dateTime) {
         try {
-            return LocalDateTime.parse(dateTime, FORMATTER);
+            String decoded = java.net.URLDecoder.decode(dateTime, "UTF-8");
+            return LocalDateTime.parse(decoded, FORMATTER);
         } catch (Exception e) {
-            log.error("Ошибка парсинга даты: {}", dateTime);
-            throw new IllegalArgumentException("Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss", e);
+            try {
+                return LocalDateTime.parse(dateTime, FORMATTER);
+            } catch (Exception ex) {
+                log.error("Ошибка парсинга даты: {}", dateTime);
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss");
+            }
         }
     }
 
     private void validateDateRange(LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Даты начала и окончания должны быть указаны");
+        }
         if (end.isBefore(start)) {
             log.error("Некорректный диапазон: start={}, end={}", start, end);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
