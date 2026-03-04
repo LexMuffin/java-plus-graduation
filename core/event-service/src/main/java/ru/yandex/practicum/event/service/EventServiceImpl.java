@@ -432,7 +432,6 @@ public class EventServiceImpl implements EventService {
 
         } catch (Exception e) {
             log.error("Ошибка при получении статистики: {}", e.getMessage());
-            event.setViews(event.getViews() == null ? 1 : event.getViews() + 1);
         }
 
         try {
@@ -544,7 +543,7 @@ public class EventServiceImpl implements EventService {
             String startStr = start.format(FORMATTER);
             String endStr = end.format(FORMATTER);
 
-            List<ViewStatsDto> stats = statsClient.getStats(startStr, endStr, uris, false);
+            List<ViewStatsDto> stats = statsClient.getStats(startStr, endStr, uris, true);
 
             return stats.stream()
                     .collect(Collectors.toMap(
