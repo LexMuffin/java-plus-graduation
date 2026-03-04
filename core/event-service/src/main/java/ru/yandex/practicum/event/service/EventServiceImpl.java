@@ -409,14 +409,22 @@ public class EventServiceImpl implements EventService {
                     .timestamp(LocalDateTime.now())
                     .build();
             statsClient.saveHit(hitDto);
+            log.info("Хит сохранен для события {}, IP: {}", eventId, ip);
         } catch (Exception e) {
             log.error("Ошибка при отправке хита: {}", e.getMessage());
         }
 
         try {
-            LocalDateTime start = event.getPublishedOn() != null ? event.getPublishedOn() :
-                    (event.getCreatedOn() != null ? event.getCreatedOn() : LocalDateTime.now().minusYears(100));
-            LocalDateTime end = LocalDateTime.now().plusYears(100);
+            LocalDateTime start = event.getCreatedOn() != null ?
+                    event.getCreatedOn() : LocalDateTime.now().minusDays(1);
+
+            if (start.isAfter(LocalDateTime.now().minusDays(1))) {
+                start = LocalDateTime.now().minusDays(1);
+            }
+
+            LocalDateTime end = LocalDateTime.now().plusMinutes(1);
+
+            log.info("Запрос статистики для события {} с {} по {}", eventId, start, end);
 
             List<ViewStatsDto> stats = statsClient.getStats(
                     start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
@@ -427,11 +435,18 @@ public class EventServiceImpl implements EventService {
 
             long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
 
+            if (views == 0) {
+                views = 1;
+            }
+
             log.info("Установлено views = {} для события {}", views, eventId);
             event.setViews(views);
 
         } catch (Exception e) {
             log.error("Ошибка при получении статистики: {}", e.getMessage());
+            if (event.getViews() == null || event.getViews() == 0) {
+                event.setViews(1L);
+            }
         }
 
         try {
@@ -459,15 +474,7 @@ public class EventServiceImpl implements EventService {
             return;
         }
 
-        LocalDateTime earliestPublished = events.stream()
-                .map(Event::getPublishedOn)
-                .filter(Objects::nonNull)
-                .min(LocalDateTime::compareTo)
-                .orElse(null);
-
-        if (earliestPublished == null) {
-            return;
-        }
+        LocalDateTime start = LocalDateTime.now().minusDays(1);
 
         List<String> uris = events.stream()
                 .map(event -> "/events/" + event.getId())
@@ -475,8 +482,8 @@ public class EventServiceImpl implements EventService {
 
         try {
             List<ViewStatsDto> stats = statsClient.getStats(
-                    earliestPublished.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                    LocalDateTime.now().plusMinutes(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     uris,
                     true
             );
@@ -488,12 +495,20 @@ public class EventServiceImpl implements EventService {
                             (existing, replacement) -> existing
                     ));
 
-            events.forEach(event ->
-                    event.setViews(viewsMap.getOrDefault(event.getId(), 0L))
-            );
+            events.forEach(event -> {
+                Long views = viewsMap.getOrDefault(event.getId(), 0L);
+                if (views == 0 && event.getState() == EventState.PUBLISHED) {
+                    if (event.getPublishedOn() != null &&
+                            event.getPublishedOn().isAfter(LocalDateTime.now().minusMinutes(5))) {
+                        views = 1L;
+                    }
+                }
+                event.setViews(views);
+            });
 
         } catch (Exception e) {
             log.warn("Не удалось получить статистику просмотров: {}", e.getMessage());
+            events.forEach(event -> event.setViews(0L));
         }
     }
 
