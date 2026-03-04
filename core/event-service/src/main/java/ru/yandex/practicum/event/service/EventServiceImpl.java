@@ -479,7 +479,7 @@ public class EventServiceImpl implements EventService {
                     earliestPublished.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     uris,
-                    false
+                    true
             );
 
             Map<Long, Long> viewsMap = stats.stream()
