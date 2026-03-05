@@ -153,6 +153,8 @@ services:
       context: ./stats/stats-server
       dockerfile: Dockerfile
     container_name: ewm-stats-service
+    ports:
+      - "9090:9090"
     restart: unless-stopped
     depends_on:
       discovery-server:
