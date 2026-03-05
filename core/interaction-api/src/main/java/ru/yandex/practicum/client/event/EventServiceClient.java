@@ -18,7 +18,7 @@ public interface EventServiceClient {
     EventFullDto getEvent(@PathVariable("id") Long id);
 
     @GetMapping("/events/categories/{catId}/exists")
-    boolean existsEventsByCategoryId(@RequestParam("catId") Long catId);
+    boolean existsEventsByCategoryId(@PathVariable("catId") Long catId);
 
     @GetMapping("/internal/events/{id}")
     EventFullDto getInternalEvent(@PathVariable("id") Long id);

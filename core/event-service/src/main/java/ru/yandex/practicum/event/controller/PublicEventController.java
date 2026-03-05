@@ -12,8 +12,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.dto.event.EventFullDto;
 import ru.yandex.practicum.dto.event.EventShortDto;
+import ru.yandex.practicum.dto.event.PublicEventSearchParams;
 import ru.yandex.practicum.event.service.EventService;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -22,8 +25,8 @@ import java.util.List;
 @RequestMapping("/events")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PublicEventController {
-
     EventService eventService;
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @GetMapping("/by-ids")
     public List<EventFullDto> getEventsByIds(@RequestParam("ids") List<Long> ids) {
@@ -45,9 +48,20 @@ public class PublicEventController {
             HttpServletRequest request) {
 
         log.info("GET /events: text={}, categories={}, paid={}", text, categories, paid);
+
         Pageable pageable = PageRequest.of(from / size, size);
-        return eventService.findPublicEvents(text, categories, paid, rangeStart,
-                rangeEnd, onlyAvailable, sort, pageable, request);
+
+        PublicEventSearchParams params = PublicEventSearchParams.builder()
+                .text(text)
+                .categories(categories)
+                .paid(paid)
+                .rangeStart(rangeStart != null ? LocalDateTime.parse(rangeStart, FORMATTER) : null)
+                .rangeEnd(rangeEnd != null ? LocalDateTime.parse(rangeEnd, FORMATTER) : null)
+                .onlyAvailable(onlyAvailable)
+                .sort(sort)
+                .build();
+
+        return eventService.findPublicEvents(params, pageable, request);
     }
 
     @GetMapping("/{id}")

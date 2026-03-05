@@ -16,17 +16,11 @@ public interface EventService {
 
     EventFullDto updateUserEvent(Long userId, Long eventId, UpdateEventUserRequest request);
 
-    List<EventFullDto> findAdminEvents(List<Long> users, List<String> states,
-                                       List<Long> categories, String rangeStart,
-                                       String rangeEnd, Pageable pageable);
+    List<EventFullDto> findAdminEvents(AdminEventSearchParams params, Pageable pageable);
 
     EventFullDto updateAdminEvent(Long eventId, UpdateEventAdminRequest request);
 
-    List<EventShortDto> findPublicEvents(String text, List<Long> categories,
-                                         Boolean paid, String rangeStart,
-                                         String rangeEnd, Boolean onlyAvailable,
-                                         String sort, Pageable pageable,
-                                         HttpServletRequest request);
+    List<EventShortDto> findPublicEvents(PublicEventSearchParams params, Pageable pageable, HttpServletRequest request);
 
     EventFullDto getPublicEvent(Long eventId, HttpServletRequest request);
 
