@@ -1,6 +1,3 @@
-server:
-  port: 9090
-
 spring:
   application:
     name: stats-service
@@ -8,23 +5,32 @@ spring:
     import: "configserver:"
   cloud:
     config:
-      fail-fast: true
+      discovery:
+        enabled: false
+      fail-fast: false
       retry:
-        max-attempts: 10
+        max-attempts: 20
         initial-interval: 2000
         multiplier: 1.5
         max-interval: 5000
-      discovery:
-        enabled: true
-        service-id: config-server
+      override-none: true
+      override-system-properties: false
+      allow-override: true
+      uri: http://config-server:8888
+  main:
+    allow-bean-definition-overriding: true
+
+server:
+  port: 9090
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
+    enabled: true
   instance:
     preferIpAddress: true
-    hostname: localhost
+    hostname: stats-service
     instance-id: "${spring.application.name}:${random.value}"

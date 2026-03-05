@@ -6,20 +6,28 @@ spring:
   cloud:
     config:
       discovery:
-        enabled: true
-        service-id: config-server
-      fail-fast: true
+        enabled: false
+      fail-fast: false
+      retry:
+        max-attempts: 20
+        initial-interval: 2000
+        multiplier: 1.5
+        max-interval: 5000
       override-none: true
       override-system-properties: false
       allow-override: true
+      uri: http://config-server:8888
   main:
     allow-bean-definition-overriding: true
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+    enabled: true
   instance:
     preferIpAddress: true
-    hostname: localhost
+    hostname: category-service
     instance-id: "${spring.application.name}:${random.value}"

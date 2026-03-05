@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:6545/event
+    url: jdbc:postgresql://event-db:5432/event
     username: event
     password: event
   jpa:

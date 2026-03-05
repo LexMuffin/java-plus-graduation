@@ -1,9 +1,68 @@
 services:
+  # ===================================================================
+  # INFRASTRUCTURE SERVICES
+  # ===================================================================
+  config-server:
+    build:
+      context: ./infra/config-server
+      dockerfile: Dockerfile
+    container_name: ewm-config-server
+    ports:
+      - "8888:8888"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      JAVA_OPTS: "-Deureka.client.serviceUrl.defaultZone=http://discovery-server:8761/eureka/ -Deureka.instance.preferIpAddress=true"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    networks:
+      - ewm-network
+
+  discovery-server:
+    build:
+      context: ./infra/discovery-server
+      dockerfile: Dockerfile
+    container_name: ewm-discovery-server
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    networks:
+      - ewm-network
+
+  gateway-server:
+    build:
+      context: ./infra/gateway-server
+      dockerfile: Dockerfile
+    container_name: ewm-gateway-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+    networks:
+      - ewm-network
+
+  # ===================================================================
+  # DATABASES
+  # ===================================================================
   stats-db:
     image: postgres:16.1
     container_name: postgres-ewm-stats-db
-    ports:
-      - "6543:5432"
     environment:
       POSTGRES_USER: postgres_stats
       POSTGRES_PASSWORD: postgres
@@ -13,12 +72,14 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    volumes:
+      - stats-db-data:/var/lib/postgresql/data
+    networks:
+      - ewm-network
 
   category-db:
     image: postgres:16.1
     container_name: postgres-ewm-category-db
-    ports:
-      - "6544:5432"
     environment:
       POSTGRES_USER: category
       POSTGRES_PASSWORD: category
@@ -28,12 +89,14 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    volumes:
+      - category-db-data:/var/lib/postgresql/data
+    networks:
+      - ewm-network
 
   event-db:
     image: postgres:16.1
     container_name: postgres-ewm-event-db
-    ports:
-      - "6545:5432"
     environment:
       POSTGRES_USER: event
       POSTGRES_PASSWORD: event
@@ -43,12 +106,14 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+    networks:
+      - ewm-network
 
   request-db:
     image: postgres:16.1
     container_name: postgres-ewm-request-db
-    ports:
-      - "6546:5432"
     environment:
       POSTGRES_USER: request
       POSTGRES_PASSWORD: request
@@ -58,12 +123,14 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    volumes:
+      - request-db-data:/var/lib/postgresql/data
+    networks:
+      - ewm-network
 
   user-db:
     image: postgres:16.1
     container_name: postgres-ewm-user-db
-    ports:
-      - "6547:5432"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: user
@@ -73,3 +140,137 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    networks:
+      - ewm-network
+
+  # ===================================================================
+  # BUSINESS LOGIC SERVICES
+  # ===================================================================
+  stats-service:
+    build:
+      context: ./stats/stats-server
+      dockerfile: Dockerfile
+    container_name: ewm-stats-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      stats-db:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/ewm_stats
+      SPRING_DATASOURCE_USERNAME: postgres_stats
+      SPRING_DATASOURCE_PASSWORD: postgres
+    networks:
+      - ewm-network
+
+  user-service:
+    build:
+      context: ./core/user-service
+      dockerfile: Dockerfile
+    container_name: ewm-user-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      user-db:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/user
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: user
+    networks:
+      - ewm-network
+
+  category-service:
+    build:
+      context: ./core/category-service
+      dockerfile: Dockerfile
+    container_name: ewm-category-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      category-db:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/category
+      SPRING_DATASOURCE_USERNAME: category
+      SPRING_DATASOURCE_PASSWORD: category
+    networks:
+      - ewm-network
+
+  event-service:
+    build:
+      context: ./core/event-service
+      dockerfile: Dockerfile
+    container_name: ewm-event-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      event-db:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/event
+      SPRING_DATASOURCE_USERNAME: event
+      SPRING_DATASOURCE_PASSWORD: event
+    networks:
+      - ewm-network
+
+  request-service:
+    build:
+      context: ./core/request-service
+      dockerfile: Dockerfile
+    container_name: ewm-request-service
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      request-db:
+        condition: service_healthy
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://request-db:5432/request
+      SPRING_DATASOURCE_USERNAME: request
+      SPRING_DATASOURCE_PASSWORD: request
+    networks:
+      - ewm-network
+
+# ===================================================================
+# VOLUMES
+# ===================================================================
+volumes:
+  stats-db-data:
+  category-db-data:
+  event-db-data:
+  request-db-data:
+  user-db-data:
+
+# ===================================================================
+# NETWORKS
+# ===================================================================
+networks:
+  ewm-network:
+    driver: bridge
