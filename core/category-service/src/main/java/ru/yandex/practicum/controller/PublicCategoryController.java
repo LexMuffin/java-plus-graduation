@@ -11,6 +11,7 @@ import ru.yandex.practicum.dto.category.CategoryDto;
 import ru.yandex.practicum.service.CategoryService;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -33,5 +34,11 @@ public class PublicCategoryController {
     public CategoryDto getCategory(@PathVariable Long catId) {
         log.info("GET /categories/{}", catId);
         return categoryService.getCategory(catId);
+    }
+
+    @PostMapping("/batch")
+    public Map<Long, CategoryDto> getCategoriesBatch(@RequestBody List<Long> ids) {
+        log.info("POST внутренний пакетный запрос для {} категорий", ids != null ? ids.size() : 0);
+        return categoryService.getCategoriesBatch(ids);
     }
 }

@@ -4,9 +4,9 @@ server:
 spring:
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://user-db:5432/user
-    username: user
-    password: user
+    url: jdbc:postgresql://${USER_DB_HOST:localhost}:${USER_DB_PORT:6547}/${USER_DB_NAME:user}
+    username: ${USER_DB_USERNAME:user}
+    password: ${USER_DB_PASSWORD:user}
   jpa:
     hibernate:
       ddl-auto: create-drop

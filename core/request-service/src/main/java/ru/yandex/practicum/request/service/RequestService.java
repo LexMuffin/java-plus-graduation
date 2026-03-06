@@ -5,6 +5,7 @@ import ru.yandex.practicum.dto.request.EventRequestStatusUpdateResult;
 import ru.yandex.practicum.dto.request.ParticipationRequestDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RequestService {
 
@@ -20,4 +21,6 @@ public interface RequestService {
                                                        EventRequestStatusUpdateRequest request);
 
     Long getConfirmedRequests(Long eventId);
+
+    Map<Long, Long> getConfirmedRequestsBatch(List<Long> eventIds);
 }

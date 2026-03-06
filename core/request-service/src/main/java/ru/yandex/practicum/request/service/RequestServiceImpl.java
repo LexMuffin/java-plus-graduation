@@ -24,6 +24,9 @@ import ru.yandex.practicum.request.repository.ParticipationRequestRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import feign.FeignException;
 
 @Slf4j
@@ -254,5 +257,23 @@ public class RequestServiceImpl implements RequestService {
     public Long getConfirmedRequests(Long eventId) {
         log.info("Получение количества подтверждённых запросов для события {}", eventId);
         return requestRepository.countConfirmedByEventId(eventId);
+    }
+
+    @Override
+    public Map<Long, Long> getConfirmedRequestsBatch(List<Long> eventIds) {
+        log.info("Пакетное получение количества подтвержденных запросов для {} событий", eventIds.size());
+
+        if (eventIds == null || eventIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Object[]> results = requestRepository.countConfirmedByEventIds(eventIds);
+
+        return results.stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1],
+                        (existing, replacement) -> existing
+                ));
     }
 }

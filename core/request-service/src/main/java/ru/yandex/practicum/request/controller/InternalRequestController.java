@@ -2,11 +2,11 @@ package ru.yandex.practicum.request.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.request.service.RequestService;
+
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -20,5 +20,11 @@ public class InternalRequestController {
     public Long getConfirmedRequests(@PathVariable Long eventId) {
         log.info("GET внутренний запрос количества подтверждённых заявок для события {}", eventId);
         return requestService.getConfirmedRequests(eventId);
+    }
+
+    @PostMapping("/events/confirmed-requests/batch")
+    public Map<Long, Long> getConfirmedRequestsBatch(@RequestBody List<Long> eventIds) {
+        log.info("POST внутренний пакетный запрос для {} событий", eventIds.size());
+        return requestService.getConfirmedRequestsBatch(eventIds);
     }
 }

@@ -262,12 +262,6 @@ public class EventServiceImpl implements EventService {
         Event updatedEvent = eventRepository.save(event);
         log.info("Событие обновлено администратором, id: {}", updatedEvent.getId());
 
-        Long confirmedRequests = null;
-        try {
-            confirmedRequests = requestClient.getConfirmedRequests(eventId);
-        } catch (Exception e) {
-            log.warn("Не удалось получить количество подтверждённых запросов для события {}", eventId);
-        }
 
         EventFullDto dto = eventMapper.toFullDto(updatedEvent);
         dto.setConfirmedRequests(updatedEvent.getConfirmedRequests());
@@ -423,18 +417,16 @@ public class EventServiceImpl implements EventService {
 
         Map<Long, Long> viewsMap = getViewsForEvents(ids);
 
+        Map<Long, Long> confirmedRequestsMap = requestClient.getConfirmedRequestsBatch(ids);
+
         events.forEach(event -> {
             Long views = viewsMap.get(event.getId());
             if (views != null) {
                 event.setViews(views);
             }
 
-            try {
-                Long confirmedRequests = requestClient.getConfirmedRequests(event.getId());
-                event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
-            } catch (Exception e) {
-                log.warn("Не удалось получить количество подтверждённых запросов для события {}", event.getId());
-            }
+            Long confirmed = confirmedRequestsMap.getOrDefault(event.getId(), 0L);
+            event.setConfirmedRequests(confirmed);
         });
 
         Map<Long, Event> eventMap = events.stream()
@@ -493,16 +485,11 @@ public class EventServiceImpl implements EventService {
 
         addViewsToEvents(events);
 
-        events.forEach(event -> {
-            try {
-                Long confirmedRequests = requestClient.getConfirmedRequests(event.getId());
-                event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
-            } catch (Exception e) {
-                log.warn("Не удалось получить количество подтверждённых запросов для события {}", event.getId());
-                event.setConfirmedRequests(0L);
-            }
-        });
+        Map<Long, Long> confirmedMap = Optional.of(events.stream().map(Event::getId).toList())
+                .map(requestClient::getConfirmedRequestsBatch)
+                .orElseGet(Collections::emptyMap);
 
+        events.forEach(e -> e.setConfirmedRequests(confirmedMap.getOrDefault(e.getId(), 0L)));
         return events;
     }
 
@@ -653,29 +640,21 @@ public class EventServiceImpl implements EventService {
 
     private void enrichEventsWithCategories(List<EventShortDto> dtos) {
         Set<Long> categoryIds = dtos.stream()
-                .map(dto -> dto.getCategory() != null ? dto.getCategory().getId() : null)
+                .map(dto -> dto.getCategory().getId())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         if (categoryIds.isEmpty()) return;
 
-        Map<Long, CategoryDto> categoryMap = new HashMap<>();
-        categoryIds.forEach(categoryId -> {
-            try {
-                categoryMap.put(categoryId, categoryClient.getCategory(categoryId));
-            } catch (Exception e) {
-                log.warn("Не удалось загрузить категорию с id {}", categoryId);
-            }
-        });
+        Map<Long, CategoryDto> categoryMap = Optional.of(categoryIds)
+                .map(ArrayList::new)
+                .map(categoryClient::getCategoriesBatch)
+                .orElse(Collections.emptyMap());
 
-        dtos.forEach(dto -> {
-            if (dto.getCategory() != null) {
-                CategoryDto fullCategory = categoryMap.get(dto.getCategory().getId());
-                if (fullCategory != null) {
-                    dto.setCategory(fullCategory);
-                }
-            }
-        });
+        dtos.stream()
+                .filter(dto -> dto.getCategory() != null)
+                .forEach(dto -> Optional.ofNullable(categoryMap.get(dto.getCategory().getId()))
+                        .ifPresent(dto::setCategory));
     }
 
     private void enrichFullEventsWithCategories(List<EventFullDto> dtos) {
@@ -686,22 +665,15 @@ public class EventServiceImpl implements EventService {
 
         if (categoryIds.isEmpty()) return;
 
-        Map<Long, CategoryDto> categoryMap = new HashMap<>();
-        categoryIds.forEach(categoryId -> {
-            try {
-                categoryMap.put(categoryId, categoryClient.getCategory(categoryId));
-            } catch (Exception e) {
-                log.warn("Не удалось загрузить категорию с id {}", categoryId);
-            }
-        });
+        try {
+            Map<Long, CategoryDto> categoryMap = categoryClient.getCategoriesBatch(new ArrayList<>(categoryIds));
 
-        dtos.forEach(dto -> {
-            if (dto.getCategory() != null) {
-                CategoryDto fullCategory = categoryMap.get(dto.getCategory().getId());
-                if (fullCategory != null) {
-                    dto.setCategory(fullCategory);
-                }
-            }
-        });
+            dtos.stream()
+                    .filter(dto -> dto.getCategory() != null)
+                    .forEach(dto -> Optional.ofNullable(categoryMap.get(dto.getCategory().getId()))
+                            .ifPresent(dto::setCategory));
+        } catch (Exception e) {
+            log.warn("Не удалось получить категории пакетно: {}", e.getMessage());
+        }
     }
 }

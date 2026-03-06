@@ -4,9 +4,9 @@ server:
 spring:
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://event-db:5432/event
-    username: event
-    password: event
+    url: jdbc:postgresql://${EVENT_DB_HOST:localhost}:${EVENT_DB_PORT:6545}/${EVENT_DB_NAME:event}
+    username: ${EVENT_DB_USERNAME:event}
+    password: ${EVENT_DB_PASSWORD:event}
   jpa:
     hibernate:
       ddl-auto: create-drop

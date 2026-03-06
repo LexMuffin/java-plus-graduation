@@ -5,6 +5,7 @@ import ru.yandex.practicum.dto.category.CategoryDto;
 import ru.yandex.practicum.dto.category.NewCategoryDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CategoryService {
 
@@ -17,4 +18,6 @@ public interface CategoryService {
     List<CategoryDto> getCategories(Pageable pageable);
 
     CategoryDto getCategory(Long catId);
+
+    Map<Long, CategoryDto> getCategoriesBatch(List<Long> ids);
 }

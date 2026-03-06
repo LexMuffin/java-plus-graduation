@@ -17,7 +17,12 @@ import ru.yandex.practicum.repository.CategoryRepository;
 import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -108,5 +113,17 @@ public class CategoryServiceImpl implements CategoryService {
                 });
 
         return categoryMapper.toDto(category);
+    }
+
+    @Override
+    public Map<Long, CategoryDto> getCategoriesBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+
+        log.info("Пакетный запрос категорий для {} id", ids.size());
+
+        return categoryRepository.findAllByIdIn(ids.stream().filter(Objects::nonNull).distinct().toList())
+                .stream()
+                .map(categoryMapper::toDto)
+                .collect(Collectors.toMap(CategoryDto::getId, Function.identity()));
     }
 }

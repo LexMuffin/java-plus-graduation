@@ -166,9 +166,11 @@ services:
     environment:
       EUREKA_URI: http://discovery-server:8761/eureka/
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/ewm_stats
-      SPRING_DATASOURCE_USERNAME: postgres_stats
-      SPRING_DATASOURCE_PASSWORD: postgres
+      STATS_DB_HOST: stats-db
+      STATS_DB_PORT: 5432
+      STATS_DB_NAME: ewm_stats
+      STATS_DB_USERNAME: postgres_stats
+      STATS_DB_PASSWORD: postgres
     networks:
       - ewm-network
 
@@ -188,9 +190,11 @@ services:
     environment:
       EUREKA_URI: http://discovery-server:8761/eureka/
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/user
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: user
+      USER_DB_HOST: user-db
+      USER_DB_PORT: 5432
+      USER_DB_NAME: user
+      USER_DB_USERNAME: user
+      USER_DB_PASSWORD: user
     networks:
       - ewm-network
 
@@ -210,9 +214,11 @@ services:
     environment:
       EUREKA_URI: http://discovery-server:8761/eureka/
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/category
-      SPRING_DATASOURCE_USERNAME: category
-      SPRING_DATASOURCE_PASSWORD: category
+      CATEGORY_DB_HOST: category-db
+      CATEGORY_DB_PORT: 5432
+      CATEGORY_DB_NAME: category
+      CATEGORY_DB_USERNAME: category
+      CATEGORY_DB_PASSWORD: category
     networks:
       - ewm-network
 
@@ -232,9 +238,11 @@ services:
     environment:
       EUREKA_URI: http://discovery-server:8761/eureka/
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/event
-      SPRING_DATASOURCE_USERNAME: event
-      SPRING_DATASOURCE_PASSWORD: event
+      EVENT_DB_HOST: event-db
+      EVENT_DB_PORT: 5432
+      EVENT_DB_NAME: event
+      EVENT_DB_USERNAME: event
+      EVENT_DB_PASSWORD: event
     networks:
       - ewm-network
 
@@ -254,9 +262,11 @@ services:
     environment:
       EUREKA_URI: http://discovery-server:8761/eureka/
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://request-db:5432/request
-      SPRING_DATASOURCE_USERNAME: request
-      SPRING_DATASOURCE_PASSWORD: request
+      REQUEST_DB_HOST: request-db
+      REQUEST_DB_PORT: 5432
+      REQUEST_DB_NAME: request
+      REQUEST_DB_USERNAME: request
+      REQUEST_DB_PASSWORD: request
     networks:
       - ewm-network
 

@@ -4,9 +4,9 @@ server:
 spring:
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/ewm_stats
-    username: postgres_stats
-    password: postgres
+    url: jdbc:postgresql://${STATS_DB_HOST:localhost}:${STATS_DB_PORT:6543}/${STATS_DB_NAME:ewm_stats}
+    username: ${STATS_DB_USERNAME:postgres_stats}
+    password: ${STATS_DB_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: create-drop
