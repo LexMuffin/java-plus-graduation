@@ -2,7 +2,7 @@ spring:
   application:
     name: category-service
   config:
-    import: "configserver:"
+    import: ${CONFIG_SERVER_IMPORT:configserver:http://config-server:8888}
   cloud:
     config:
       discovery:
