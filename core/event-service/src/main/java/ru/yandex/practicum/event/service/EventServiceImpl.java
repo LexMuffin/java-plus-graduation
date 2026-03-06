@@ -262,7 +262,6 @@ public class EventServiceImpl implements EventService {
         Event updatedEvent = eventRepository.save(event);
         log.info("Событие обновлено администратором, id: {}", updatedEvent.getId());
 
-
         EventFullDto dto = eventMapper.toFullDto(updatedEvent);
         dto.setConfirmedRequests(updatedEvent.getConfirmedRequests());
 
