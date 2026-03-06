@@ -2,6 +2,10 @@ FROM eclipse-temurin:21-jre-jammy
 VOLUME /tmp
 ARG JAR_FILE=target/*.jar
 COPY ${JAR_FILE} app.jar
-ENV EUREKA_URI=http://discovery-server:8761/eureka/
-ENV SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+ARG CONFIG_SERVER_URI=http://config-server:8888
+ARG CONFIG_SERVER_IMPORT=configserver:http://config-server:8888
+ARG PROFILE=default
+ENV CONFIG_SERVER_URI=${CONFIG_SERVER_URI}
+ENV CONFIG_SERVER_IMPORT=${CONFIG_SERVER_IMPORT}
+ENV SPRING_PROFILES_ACTIVE=${PROFILE}
 ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar"]
