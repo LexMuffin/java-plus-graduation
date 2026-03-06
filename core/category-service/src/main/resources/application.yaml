@@ -16,7 +16,7 @@ spring:
       override-none: true
       override-system-properties: false
       allow-override: true
-      uri: http://config-server:8888
+      uri: ${CONFIG_SERVER_URI:http://config-server:8888}
   main:
     allow-bean-definition-overriding: true
 
