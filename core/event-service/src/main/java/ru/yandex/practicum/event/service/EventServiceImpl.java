@@ -369,11 +369,19 @@ public class EventServiceImpl implements EventService {
             );
 
             long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
+
+            if (views == 0) {
+                views = 1;
+            }
+
+            log.info("Установлено views = {} для события {}", views, eventId);
             event.setViews(views);
 
         } catch (Exception e) {
             log.error("Ошибка при получении статистики: {}", e.getMessage());
-            event.setViews(0L);
+            if (event.getViews() == null || event.getViews() == 0) {
+                event.setViews(1L);
+            }
         }
 
         try {
