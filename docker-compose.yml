@@ -63,15 +63,13 @@ services:
   # ===================================================================
   stats-db:
     image: postgres:16.1
-    container_name: postgres-stats-db
+    container_name: stats-db
     ports:
       - "6543:5432"
     environment:
-      POSTGRES_DB: stats-db
-      POSTGRES_USER: stats_user
-      POSTGRES_PASSWORD: stats_pass
-    volumes:
-      - stats-db-data:/var/lib/postgresql/data
+      POSTGRES_DB: statsdb
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -82,15 +80,13 @@ services:
 
   user-db:
     image: postgres:16.1
-    container_name: postgres-user-db
+    container_name: user-db
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: user-db
-      POSTGRES_USER: user_user
-      POSTGRES_PASSWORD: user_pass
-    volumes:
-      - user-db-data:/var/lib/postgresql/data
+      POSTGRES_DB: userdb
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -101,15 +97,13 @@ services:
 
   category-db:
     image: postgres:16.1
-    container_name: postgres-category-db
+    container_name: category-db
     ports:
       - "5434:5432"
     environment:
       POSTGRES_DB: categorydb
-      POSTGRES_USER: category_user
-      POSTGRES_PASSWORD: category_pass
-    volumes:
-      - category-db-data:/var/lib/postgresql/data
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -120,15 +114,13 @@ services:
 
   event-db:
     image: postgres:16.1
-    container_name: postgres-event-db
+    container_name: event-db
     ports:
       - "5435:5432"
     environment:
-      POSTGRES_DB: event-db
-      POSTGRES_USER: event_user
-      POSTGRES_PASSWORD: event_pass
-    volumes:
-      - event-db-data:/var/lib/postgresql/data
+      POSTGRES_DB: eventdb
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -139,15 +131,13 @@ services:
 
   request-db:
     image: postgres:16.1
-    container_name: postgres-request-db
+    container_name: request-db
     ports:
       - "5436:5432"
     environment:
-      POSTGRES_DB: request-db
-      POSTGRES_USER: request_user
-      POSTGRES_PASSWORD: request_pass
-    volumes:
-      - request-db-data:/var/lib/postgresql/data
+      POSTGRES_DB: requestdb
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -176,9 +166,9 @@ services:
         condition: service_healthy
     environment:
       # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/stats-db
-      SPRING_DATASOURCE_USERNAME: stats_user
-      SPRING_DATASOURCE_PASSWORD: stats_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/statsdb
+      SPRING_DATASOURCE_USERNAME: dbuser
+      SPRING_DATASOURCE_PASSWORD: 12345
       # Spring Cloud
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SERVER_PORT: 9090
@@ -215,9 +205,9 @@ services:
         condition: service_healthy
     environment:
       # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/user-db
-      SPRING_DATASOURCE_USERNAME: user_user
-      SPRING_DATASOURCE_PASSWORD: user_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/userdb
+      SPRING_DATASOURCE_USERNAME: dbuser
+      SPRING_DATASOURCE_PASSWORD: 12345
       # Spring Cloud
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SERVER_PORT: 0
@@ -252,9 +242,9 @@ services:
         condition: service_healthy
     environment:
       # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/category-db
-      SPRING_DATASOURCE_USERNAME: category_user
-      SPRING_DATASOURCE_PASSWORD: category_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/categorydb
+      SPRING_DATASOURCE_USERNAME: dbuser
+      SPRING_DATASOURCE_PASSWORD: 12345
       # Spring Cloud
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SERVER_PORT: 0
@@ -291,9 +281,9 @@ services:
         condition: service_healthy
     environment:
       # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/event-db
-      SPRING_DATASOURCE_USERNAME: event_user
-      SPRING_DATASOURCE_PASSWORD: event_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/eventdb
+      SPRING_DATASOURCE_USERNAME: dbuser
+      SPRING_DATASOURCE_PASSWORD: 12345
       # Spring Cloud
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       SERVER_PORT: 0
