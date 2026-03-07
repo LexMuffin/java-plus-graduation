@@ -46,7 +46,7 @@ spring:
       enabled: true
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/category
+    url: jdbc:postgresql://category-db:5432/category
     username: category
     password: category
   jpa:
@@ -65,20 +65,15 @@ logging:
     org.springframework.web: INFO
     org.springframework.orm.jpa: INFO
     org.springframework.transaction: INFO
-    org.springframework.transaction.interceptor: INFO
-    org.springframework.orm.jpa.JpaTransactionManager: INFO
-    org.zalando.logbook: TRACE
+    ru.practicum.ewm: DEBUG
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-server:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
     enabled: true
   instance:
     prefer-ip-address: true
-    hostname: localhost
-
-management:
-  endpoints.web.exposure.include: health, info
+    hostname: category-service

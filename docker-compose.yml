@@ -214,8 +214,6 @@ services:
       dockerfile: Dockerfile
     container_name: ewm-category-service
     restart: unless-stopped
-    ports:
-      - "8082"
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -224,15 +222,12 @@ services:
       category-db:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
       SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/category
       SPRING_DATASOURCE_USERNAME: category
       SPRING_DATASOURCE_PASSWORD: category
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SERVER_PORT: 0
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      EUREKA_INSTANCE_INSTANCE_ID: $${spring.cloud.client.ip-address}:$${spring.application.name}:$${server.port}
-      SPRING_APPLICATION_NAME: category-service
-      SPRING_PROFILES_ACTIVE: docker
     networks:
       - ewm-network
 
