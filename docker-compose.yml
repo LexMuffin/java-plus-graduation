@@ -223,7 +223,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
-#      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
       SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/category
       SPRING_DATASOURCE_USERNAME: category
       SPRING_DATASOURCE_PASSWORD: category
