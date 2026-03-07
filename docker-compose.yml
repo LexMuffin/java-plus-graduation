@@ -190,7 +190,7 @@ services:
     build:
       context: core/category-service
 #      dockerfile: Dockerfile
-    container_name: ewm-category-service
+    container_name: category-service
     restart: unless-stopped
     ports:
       - "8082"
