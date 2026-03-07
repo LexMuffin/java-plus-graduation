@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://${CATEGORY_DB_HOST:localhost}:${CATEGORY_DB_PORT:5432}/${CATEGORY_DB_NAME:category}
+    url: jdbc:postgresql://localhost:5432/category #jdbc:postgresql://${CATEGORY_DB_HOST:localhost}:${CATEGORY_DB_PORT:5432}/${CATEGORY_DB_NAME:category}
     username: category #${CATEGORY_DB_USERNAME:category}
     password: category #${CATEGORY_DB_PASSWORD:category}
   jpa:
