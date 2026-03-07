@@ -4,8 +4,8 @@ spring:
   datasource:
     driverClassName: org.postgresql.Driver
     url: jdbc:postgresql://${CATEGORY_DB_HOST:localhost}:${CATEGORY_DB_PORT:6544}/${CATEGORY_DB_NAME:category}
-    username: ${CATEGORY_DB_USERNAME:category}
-    password: ${CATEGORY_DB_PASSWORD:category}
+    username: category #${CATEGORY_DB_USERNAME:category}
+    password: category #${CATEGORY_DB_PASSWORD:category}
   config:
     import: ${CONFIG_SERVER_IMPORT:optional:configserver:http://config-server:8888}
   cloud:
