@@ -80,8 +80,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
-    volumes:
-      - stats-db-data:/var/lib/postgresql/data
+#    volumes:
+#      - stats-db-data:/var/lib/postgresql/data
     networks:
       - ewm-network
 
@@ -96,7 +96,7 @@ services:
       - POSTGRES_PASSWORD=12345
     volumes:
       - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
-      - main-db-data:/var/lib/postgresql/data
+#      - main-db-data:/var/lib/postgresql/data
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
@@ -188,8 +188,8 @@ services:
 
   category-service:
     build:
-      context: ./core/category-service
-      dockerfile: Dockerfile
+      context: core/category-service
+#      dockerfile: Dockerfile
     container_name: ewm-category-service
     restart: unless-stopped
     ports:
@@ -200,8 +200,6 @@ services:
       discovery-server:
         condition: service_healthy
       config-server:
-        condition: service_healthy
-      user-service:
         condition: service_healthy
     environment:
       # DB
@@ -216,8 +214,6 @@ services:
       # Spring Boot
       SPRING_APPLICATION_NAME: category-service
       SPRING_PROFILES_ACTIVE: docker
-      # Ссылки на другие сервисы
-      USER_SERVICE_URL: http://user-service
     healthcheck:
       test: >
         curl -s http://discovery-server:8761/eureka/apps/CATEGORY-SERVICE |
@@ -324,9 +320,10 @@ services:
 # ===================================================================
 # VOLUMES
 # ===================================================================
-volumes:
-  stats-db-data:
-  main-db-data:
+
+#volumes:
+#  stats-db-data:
+#  main-db-data:
 
 # ===================================================================
 # NETWORKS
