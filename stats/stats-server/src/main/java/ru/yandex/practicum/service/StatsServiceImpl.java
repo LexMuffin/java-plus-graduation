@@ -25,9 +25,6 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class StatsServiceImpl implements StatsService {
 
-    private static final DateTimeFormatter FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
     StatsRepository statsRepository;
     StatsMapper statsMapper;
 
@@ -47,6 +44,7 @@ public class StatsServiceImpl implements StatsService {
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         log.info("Получение статистики: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
 
+        validateDateRange(start, end);
 
             List<ViewStatsDto> stats = unique
                     ? statsRepository.findUniqueStats(start, end, uris)

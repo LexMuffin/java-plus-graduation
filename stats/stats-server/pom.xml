@@ -18,6 +18,7 @@
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
         <lombok.version>1.18.40</lombok.version>
         <postgresql.version>42.7.3</postgresql.version>
+        <jackson-bom.version>2.15.2</jackson-bom.version>
     </properties>
 
     <dependencies>
@@ -98,6 +99,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson-bom.version}</version>
         </dependency>
     </dependencies>
 

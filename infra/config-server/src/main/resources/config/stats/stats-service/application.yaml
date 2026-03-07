@@ -13,6 +13,9 @@ spring:
       hibernate:
         default_schema: public
         format_sql: true
+  hibernate:
+    jdbc:
+      time_zone: UTC
 
   logging:
     level:
