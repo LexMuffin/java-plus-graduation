@@ -3,10 +3,8 @@ services:
   # INFRASTRUCTURE SERVICES
   # ===================================================================
   discovery-server:
-    build:
-      context: ./infra/discovery-server
-      dockerfile: Dockerfile
-    container_name: ewm-discovery-server
+    build: infra/discovery-server
+    container_name: discovery-server
     ports:
       - "8761:8761"
     healthcheck:
@@ -14,14 +12,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
-    networks:
-      - ewm-network
 
   config-server:
-    build:
-      context: ./infra/config-server
-      dockerfile: Dockerfile
-    container_name: ewm-config-server
+    build: infra/config-server
+    container_name: config-server
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -37,14 +31,10 @@ services:
       timeout: 10s
       retries: 10
       start_period: 90s
-    networks:
-      - ewm-network
 
   gateway-server:
-    build:
-      context: ./infra/gateway-server
-      dockerfile: Dockerfile
-    container_name: ewm-gateway-server
+    build: infra/gateway-server
+    container_name: gateway-server
     ports:
       - "8080:8080"
     depends_on:
@@ -54,21 +44,20 @@ services:
         condition: service_healthy
     environment:
       EUREKA_URI: http://discovery-server:8761/eureka/
+      PORT: 8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
-    networks:
-      - ewm-network
 
   # ===================================================================
   # DATABASES
   # ===================================================================
   stats-db:
     image: postgres:16.1
-    container_name: postgres-ewm-stats-db
+    container_name: postgres-stats-db
     ports:
       - "6543:5432"
     environment:
@@ -80,10 +69,6 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
-#    volumes:
-#      - stats-db-data:/var/lib/postgresql/data
-    networks:
-      - ewm-network
 
   main-db:
     image: postgres:16.1
@@ -96,14 +81,11 @@ services:
       - POSTGRES_PASSWORD=12345
     volumes:
       - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
-#      - main-db-data:/var/lib/postgresql/data
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
-#    networks:
-#      - ewm-network
 
   # ===================================================================
   # BUSINESS LOGIC SERVICES
@@ -187,9 +169,7 @@ services:
       - ewm-network
 
   category-service:
-    build:
-      context: core/category-service
-#      dockerfile: Dockerfile
+    build: core/category-service
     container_name: category-service
     restart: unless-stopped
     ports:
@@ -222,8 +202,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-#    networks:
-#      - ewm-network
 
   event-service:
     build:
