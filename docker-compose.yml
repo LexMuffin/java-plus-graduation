@@ -228,7 +228,9 @@ services:
       - ewm-network
 
   category-service:
-    build: core/category-service
+    build:
+      context: ./core/category-service
+      dockerfile: Dockerfile
     container_name: category-service
     restart: unless-stopped
     ports:
