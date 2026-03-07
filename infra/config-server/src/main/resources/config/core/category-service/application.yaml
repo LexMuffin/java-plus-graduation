@@ -41,4 +41,4 @@ eureka:
     enabled: true
   instance:
     prefer-ip-address: true
-    hostname: localhost
+    hostname: category-service
