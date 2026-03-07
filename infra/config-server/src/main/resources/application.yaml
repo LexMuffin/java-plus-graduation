@@ -9,19 +9,20 @@ spring:
         native:
           searchLocations:
             - classpath:config/core/{application}
-            - classpath:config/stats/{application}
             - classpath:config/infra/{application}
+            - classpath:config/stats/{application}
 
 server:
   port: 8888
 
 eureka:
   client:
+    registerWithEureka: true
     serviceUrl:
       defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
-    register-with-eureka: true
     fetch-registry: true
     enabled: true
   instance:
     preferIpAddress: true
     hostname: config-server
+    instance-id: "${spring.application.name}:${random.value}"
