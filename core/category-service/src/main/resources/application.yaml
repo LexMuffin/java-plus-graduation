@@ -5,7 +5,12 @@ spring:
   application:
     name: category-service
   config:
-    import: "configserver:"
+    activate:
+      on-profile: docker
+    datasource:
+      url: jdbc:postgresql://category-db:5432/categorydb
+      username: dbuser
+      password: 12345
   cloud:
     config:
       discovery:
