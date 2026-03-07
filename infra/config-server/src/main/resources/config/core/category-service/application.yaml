@@ -46,7 +46,7 @@ spring:
       enabled: true
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/category
+    url: jdbc:postgresql://localhost:6544/category
     username: category
     password: category
   jpa:
