@@ -1,8 +1,13 @@
 spring:
   application:
     name: category-service
-  config:
-    import: "configserver:http://config-server:8888"
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5434/categorydb
+    username: dbuser
+    password: 12345
+#  config:
+#    import: "configserver:http://config-server:8888"
 #  cloud:
 #    config:
 #      discovery:
