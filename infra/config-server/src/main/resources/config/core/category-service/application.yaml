@@ -12,17 +12,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        entitymanager:
-          factory:
-            interface: jakarta.persistence.EntityManagerFactory
   sql:
     init:
       mode: always
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5433/category_service
-    username: dbuser
-    password: 12345
+    url: jdbc:postgresql://localhost:5434/categorydb
+    username: category_user
+    password: category_pass
 
 server:
   port: 0
