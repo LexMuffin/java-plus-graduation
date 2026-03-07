@@ -3,12 +3,11 @@ spring:
     name: category-service
   config:
     import: "optional:configserver:"
-  spring:
-    datasource:
-      driverClassName: org.postgresql.Driver
-      url: jdbc:postgresql://localhost:5433/category_service
-      username: dbuser
-      password: 12345
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5433/category_service
+    username: dbuser
+    password: 12345
   cloud:
     config:
       discovery:
