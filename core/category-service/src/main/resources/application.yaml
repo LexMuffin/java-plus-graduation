@@ -1,61 +1,22 @@
-#spring:
-#  application:
-#    name: category-service
-##  datasource:
-##    driverClassName: org.postgresql.Driver
-##    url: jdbc:postgresql://${CATEGORY_DB_HOST:localhost}:${CATEGORY_DB_PORT:6544}/${CATEGORY_DB_NAME:category}
-##    username: category #${CATEGORY_DB_USERNAME:category}
-##    password: category #${CATEGORY_DB_PASSWORD:category}
-#  config:
-#    import: ${CONFIG_SERVER_IMPORT:optional:configserver:http://config-server:8888}
-#  cloud:
-#    config:
-#      discovery:
-#        enabled: false
-#      fail-fast: false
-#      retry:
-#        max-attempts: 20
-#        initial-interval: 2000
-#        multiplier: 1.5
-#        max-interval: 5000
-#      override-none: true
-#      override-system-properties: false
-#      allow-override: true
-##      uri: ${CONFIG_SERVER_URI:http://config-server:8888}
-#  main:
-#    allow-bean-definition-overriding: true
-#
-#eureka:
-#  client:
-#    serviceUrl:
-#      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
-#    register-with-eureka: true
-#    fetch-registry: true
-#    enabled: true
-#  instance:
-#    preferIpAddress: true
-#    hostname: category-service
-#    instance-id: "${spring.application.name}:${random.value}"
-
 spring:
   application:
     name: category-service
   config:
-    import: "optional:configserver:http://config-server:8888"
-#  cloud:
-#    config:
-#      discovery:
-#        enabled: true
-#        service-id: config-server
-    fail-fast: true
-    retry:
-      use-random-policy: true
-      initial-interval: 3000
-      max-interval: 10000
-      multiplier: 1.5
-      max-attempts: 10
-    request-connect-timeout: 5000
-    request-read-timeout: 5000
+    import: "optional:configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: true
+      retry:
+        use-random-policy: true
+        initial-interval: 3000
+        max-interval: 10000
+        multiplier: 1.5
+        max-attempts: 10
+      request-connect-timeout: 5000
+      request-read-timeout: 5000
 
 eureka:
   client:
