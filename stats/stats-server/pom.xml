@@ -129,7 +129,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>ru.practicum.stats.server.StatsServerApplication</mainClass>
+                    <mainClass>ru.practicum.stats.server.StatsServer</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
