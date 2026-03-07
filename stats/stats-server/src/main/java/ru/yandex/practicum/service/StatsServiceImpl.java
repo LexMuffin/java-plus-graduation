@@ -95,15 +95,17 @@ public class StatsServiceImpl implements StatsService {
 
         try {
             String decoded = java.net.URLDecoder.decode(dateTime, "UTF-8");
-            return LocalDateTime.parse(decoded, FORMATTER);
-        } catch (Exception e) {
+
             try {
-                return LocalDateTime.parse(dateTime, FORMATTER);
-            } catch (Exception ex) {
-                log.error("Ошибка парсинга даты: {}", dateTime);
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss, получено: " + dateTime);
+                return LocalDateTime.parse(decoded, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            } catch (Exception e) {
+                return LocalDateTime.parse(decoded,
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             }
+        } catch (Exception e) {
+            log.error("Ошибка парсинга даты: {}", dateTime);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Неверный формат даты: " + dateTime);
         }
     }
 
