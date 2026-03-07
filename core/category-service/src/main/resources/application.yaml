@@ -41,7 +41,7 @@ spring:
   application:
     name: category-service
   config:
-    import: "optional:configserver:"
+    import: "optional:configserver:http://config-server:8888"
   cloud:
     config:
       discovery:
@@ -64,5 +64,5 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
   instance:
     instance-id: "${spring.application.name}:${random.value}"
-    preferIpAddress: false
-    hostname: localhost
+    preferIpAddress: true
+    hostname: ${spring.application.name}
