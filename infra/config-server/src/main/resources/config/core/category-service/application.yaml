@@ -1,29 +1,64 @@
+#server:
+#  port: 0
+#
+#spring:
+#  datasource:
+#    driverClassName: org.postgresql.Driver
+#    url: jdbc:postgresql://localhost:5432/category #jdbc:postgresql://${CATEGORY_DB_HOST:localhost}:${CATEGORY_DB_PORT:5432}/${CATEGORY_DB_NAME:category}
+#    username: category #${CATEGORY_DB_USERNAME:category}
+#    password: category #${CATEGORY_DB_PASSWORD:category}
+#  jpa:
+#    hibernate:
+#      ddl-auto: create-drop
+#    properties:
+#      hibernate:
+#        format_sql: true
+#  sql:
+#    init:
+#      mode: always
+#
+#hibernate:
+#  jdbc:
+#    time_zone: UTC
+#
+#logbook:
+#  format:
+#    style: http
+#
+#logging:
+#  level:
+#    org.springframework.web: INFO
+#    org.springframework.orm.jpa: INFO
+#    org.springframework.transaction: INFO
+#    org.springframework.transaction.interceptor: INFO
+#    org.springframework.orm.jpa.JpaTransactionManager: INFO
+#    org.zalando.logbook: TRACE
+
+
 server:
   port: 0
 
 spring:
+  application:
+    name: category-service
+  cloud:
+    discovery:
+      enabled: true
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/category #jdbc:postgresql://${CATEGORY_DB_HOST:localhost}:${CATEGORY_DB_PORT:5432}/${CATEGORY_DB_NAME:category}
-    username: category #${CATEGORY_DB_USERNAME:category}
-    password: category #${CATEGORY_DB_PASSWORD:category}
+    url: jdbc:postgresql://localhost:5432/category
+    username: category
+    password: category
   jpa:
     hibernate:
       ddl-auto: create-drop
     properties:
       hibernate:
         format_sql: true
+    show-sql: true
   sql:
     init:
       mode: always
-
-hibernate:
-  jdbc:
-    time_zone: UTC
-
-logbook:
-  format:
-    style: http
 
 logging:
   level:
@@ -33,3 +68,17 @@ logging:
     org.springframework.transaction.interceptor: INFO
     org.springframework.orm.jpa.JpaTransactionManager: INFO
     org.zalando.logbook: TRACE
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+    enabled: true
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+
+management:
+  endpoints.web.exposure.include: health, info
