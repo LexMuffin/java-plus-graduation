@@ -87,7 +87,7 @@ services:
 
   main-db:
     image: postgres:16.1
-    container_name: postgres-ewm-main-db
+    container_name: postgres-main-db
     ports:
       - "5433:5432"
     environment:
@@ -102,8 +102,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
-    networks:
-      - ewm-network
+#    networks:
+#      - ewm-network
 
   # ===================================================================
   # BUSINESS LOGIC SERVICES
@@ -222,8 +222,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    networks:
-      - ewm-network
+#    networks:
+#      - ewm-network
 
   event-service:
     build:
