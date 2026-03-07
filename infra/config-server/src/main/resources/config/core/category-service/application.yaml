@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://category-sb:5432/categorydb
+    url: jdbc:postgresql://category-db:5432/categorydb
     username: dbuser
-    password: "12345"
+    password: 12345
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
