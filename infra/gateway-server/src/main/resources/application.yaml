@@ -1,3 +1,6 @@
+server:
+  port: ${SERVER_PORT:8080}
+
 spring:
   application:
     name: gateway-server
@@ -5,16 +8,15 @@ spring:
     import: "configserver:"
   cloud:
     config:
+      uri: ${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
+      discovery:
+        enabled: true
+        serviceId: config-server
       fail-fast: false
       retry:
-        max-attempts: 20
+        max-attempts: 10
         initial-interval: 2000
         multiplier: 1.5
-        max-interval: 5000
-        useRandomPolicy: true
-      discovery:
-        enabled: false
-      uri: http://config-server:8888
 
 eureka:
   client:
