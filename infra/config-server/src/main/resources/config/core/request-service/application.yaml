@@ -1,35 +1,19 @@
-server:
-  port: 0
-
 spring:
   datasource:
-    driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://${REQUEST_DB_HOST:localhost}:${REQUEST_DB_PORT:6546}/${REQUEST_DB_NAME:request}
-    username: ${REQUEST_DB_USERNAME:request}
-    password: ${REQUEST_DB_PASSWORD:request}
+    url: jdbc:postgresql://request-db:5432/requestdb
+    username: dbuser
+    password: 12345
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
     properties:
       hibernate:
-        format_sql: true
-  sql:
-    init:
-      mode: always
+        default_schema: public
+        format_sql: false
 
-hibernate:
-  jdbc:
-    time_zone: UTC
-
-logbook:
-  format:
-    style: http
-
-logging:
-  level:
-    org.springframework.web: INFO
-    org.springframework.orm.jpa: INFO
-    org.springframework.transaction: INFO
-    org.springframework.transaction.interceptor: INFO
-    org.springframework.orm.jpa.JpaTransactionManager: INFO
-    org.zalando.logbook: TRACE
+  logging:
+    level:
+      ru.practicum.ewm: DEBUG

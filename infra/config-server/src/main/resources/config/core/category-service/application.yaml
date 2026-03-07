@@ -1,44 +1,19 @@
 spring:
-  application:
-    name: category-service
-  cloud:
-    discovery:
-      enabled: true
+  datasource:
+    url: jdbc:postgresql://category-db:5432/categorydb
+    username: dbuser
+    password: 12345
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
     properties:
       hibernate:
-        format_sql: true
-  sql:
-    init:
-      mode: always
-  datasource:
-    driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/categorydb
-    username: dbuser
-    password: 12345
+        default_schema: public
+        format_sql: false
 
-server:
-  port: 0
-
-logging:
-  level:
-    ru.practicum.stats: INFO
-    org.springframework.transaction.interceptor: TRACE
-    org.springframework.web: INFO
-    org.springframework.orm.jpa: INFO
-    org.springframework.transaction: INFO
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://discovery-server:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-    enabled: true
-  instance:
-    prefer-ip-address: true
-    hostname: category-service
+  logging:
+    level:
+      ru.practicum.ewm: DEBUG

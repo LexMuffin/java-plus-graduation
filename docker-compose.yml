@@ -7,24 +7,27 @@ services:
     container_name: discovery-server
     ports:
       - "8761:8761"
+    environment:
+      - EUREKA_INSTANCE_HOSTNAME=discovery-server
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 5s
       timeout: 3s
       retries: 3
-    networks:
-      - ewm-network
 
   config-server:
     build: infra/config-server
     container_name: config-server
+    ports:
+      - "8888:8888"
     depends_on:
       discovery-server:
         condition: service_healthy
     environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SERVER_PORT: 0
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      - SERVER_PORT=8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: >
         curl -f http://discovery-server:8761/eureka/apps/CONFIG-SERVER |
@@ -33,8 +36,6 @@ services:
       timeout: 10s
       retries: 10
       start_period: 90s
-    networks:
-      - ewm-network
 
   gateway-server:
     build: infra/gateway-server
@@ -47,16 +48,17 @@ services:
       config-server:
         condition: service_healthy
     environment:
-      EUREKA_URI: http://discovery-server:8761/eureka/
-      PORT: 8080
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8080
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
-    networks:
-      - ewm-network
 
   # ===================================================================
   # DATABASES - отдельная БД для каждого сервиса
@@ -65,87 +67,91 @@ services:
     image: postgres:16.1
     container_name: stats-db
     ports:
-      - "6543:5432"
+      - "6432:5432"
     environment:
-      POSTGRES_DB: statsdb
-      POSTGRES_USER: dbuser
-      POSTGRES_PASSWORD: 12345
+      - POSTGRES_DB=statsdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - stats-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
-    networks:
-      - ewm-network
 
   user-db:
     image: postgres:16.1
     container_name: user-db
     ports:
-      - "5433:5432"
+      - "6433:5432"
     environment:
-      POSTGRES_DB: userdb
-      POSTGRES_USER: dbuser
-      POSTGRES_PASSWORD: 12345
+      - POSTGRES_DB=userdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
-    networks:
-      - ewm-network
 
   category-db:
     image: postgres:16.1
     container_name: category-db
     ports:
-      - "5434:5432"
+      - "6434:5432"
     environment:
-      POSTGRES_DB: categorydb
-      POSTGRES_USER: dbuser
-      POSTGRES_PASSWORD: 12345
+      - POSTGRES_DB=categorydb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - category-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
-    networks:
-      - ewm-network
 
   event-db:
     image: postgres:16.1
     container_name: event-db
     ports:
-      - "5435:5432"
+      - "6435:5432"
     environment:
-      POSTGRES_DB: eventdb
-      POSTGRES_USER: dbuser
-      POSTGRES_PASSWORD: 12345
+      - POSTGRES_DB=eventdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
-    networks:
-      - ewm-network
 
   request-db:
     image: postgres:16.1
     container_name: request-db
     ports:
-      - "5436:5432"
+      - "6436:5432"
     environment:
-      POSTGRES_DB: requestdb
-      POSTGRES_USER: dbuser
-      POSTGRES_PASSWORD: 12345
+      - POSTGRES_DB=requestdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - request-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
-    networks:
-      - ewm-network
-
   # ===================================================================
   # BUSINESS LOGIC SERVICES
   # ===================================================================
@@ -153,7 +159,7 @@ services:
     build:
       context: ./stats/stats-server
       dockerfile: Dockerfile
-    container_name: ewm-stats-service
+    container_name: stats-service
     ports:
       - "9090:9090"
     restart: unless-stopped
@@ -165,18 +171,10 @@ services:
       stats-db:
         condition: service_healthy
     environment:
-      # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/statsdb
-      SPRING_DATASOURCE_USERNAME: dbuser
-      SPRING_DATASOURCE_PASSWORD: 12345
-      # Spring Cloud
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SERVER_PORT: 9090
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      EUREKA_INSTANCE_INSTANCE_ID: $${spring.cloud.client.ip-address}:$${spring.application.name}:$${server.port}
-      # Spring Boot
-      SPRING_APPLICATION_NAME: stats-service
-      SPRING_PROFILES_ACTIVE: docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/statsdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: >
         curl -s http://discovery-server:8761/eureka/apps/STATS-SERVICE |
@@ -185,17 +183,15 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    networks:
-      - ewm-network
 
   user-service:
     build:
       context: ./core/user-service
       dockerfile: Dockerfile
-    container_name: ewm-user-service
+    container_name: user-service
     restart: unless-stopped
     ports:
-      - "8081"
+      - "8081:8081"
     depends_on:
       user-db:
         condition: service_healthy
@@ -204,18 +200,11 @@ services:
       config-server:
         condition: service_healthy
     environment:
-      # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/userdb
-      SPRING_DATASOURCE_USERNAME: dbuser
-      SPRING_DATASOURCE_PASSWORD: 12345
-      # Spring Cloud
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SERVER_PORT: 0
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      EUREKA_INSTANCE_INSTANCE_ID: $${spring.cloud.client.ip-address}:$${spring.application.name}:$${server.port}
-      # Spring Boot
-      SPRING_APPLICATION_NAME: user-service
-      SPRING_PROFILES_ACTIVE: docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-db:5432/userdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8081
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: >
         curl -s http://discovery-server:8761/eureka/apps/USER-SERVICE |
@@ -224,8 +213,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    networks:
-      - ewm-network
 
   category-service:
     build:
@@ -234,7 +221,7 @@ services:
     container_name: category-service
     restart: unless-stopped
     ports:
-      - "8082"
+      - "8082:8082"
     depends_on:
       category-db:
         condition: service_healthy
@@ -243,18 +230,11 @@ services:
       config-server:
         condition: service_healthy
     environment:
-      # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/categorydb
-      SPRING_DATASOURCE_USERNAME: dbuser
-      SPRING_DATASOURCE_PASSWORD: 12345
-      # Spring Cloud
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SERVER_PORT: 0
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      EUREKA_INSTANCE_INSTANCE_ID: $${spring.cloud.client.ip-address}:$${spring.application.name}:$${server.port}
-      # Spring Boot
-      SPRING_APPLICATION_NAME: category-service
-      SPRING_PROFILES_ACTIVE: docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://category-db:5432/categorydb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8082
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: >
         curl -s http://discovery-server:8761/eureka/apps/CATEGORY-SERVICE |
@@ -263,17 +243,15 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    networks:
-      - ewm-network
 
   event-service:
     build:
       context: ./core/event-service
       dockerfile: Dockerfile
-    container_name: ewm-event-service
+    container_name: event-service
     restart: unless-stopped
     ports:
-      - "8083"
+      - "8083:8083"
     depends_on:
       event-db:
         condition: service_healthy
@@ -281,22 +259,14 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
+      stats-service:
+        condition: service_healthy
     environment:
-      # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://event-db:5432/eventdb
-      SPRING_DATASOURCE_USERNAME: dbuser
-      SPRING_DATASOURCE_PASSWORD: 12345
-      # Spring Cloud
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SERVER_PORT: 0
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      EUREKA_INSTANCE_INSTANCE_ID: $${spring.cloud.client.ip-address}:$${spring.application.name}:$${server.port}
-      # Spring Boot
-      SPRING_APPLICATION_NAME: event-service
-      SPRING_PROFILES_ACTIVE: docker
-      # Ссылки на другие сервисы
-      USER_SERVICE_URL: http://user-service
-      CATEGORY_SERVICE_URL: http://category-service
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://event-db:5432/eventdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8083
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: >
         curl -s http://discovery-server:8761/eureka/apps/EVENT-SERVICE |
@@ -305,17 +275,15 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    networks:
-      - ewm-network
 
   request-service:
     build:
       context: ./core/request-service
       dockerfile: Dockerfile
-    container_name: ewm-request-service
+    container_name: request-service
     restart: unless-stopped
     ports:
-      - "8084"
+      - "8084:8084"
     depends_on:
       request-db:
         condition: service_healthy
@@ -324,21 +292,11 @@ services:
       config-server:
         condition: service_healthy
     environment:
-      # DB
-      SPRING_DATASOURCE_URL: jdbc:postgresql://request-db:5432/request-db
-      SPRING_DATASOURCE_USERNAME: request_user
-      SPRING_DATASOURCE_PASSWORD: request_pass
-      # Spring Cloud
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SERVER_PORT: 0
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      EUREKA_INSTANCE_INSTANCE_ID: $${spring.cloud.client.ip-address}:$${spring.application.name}:$${server.port}
-      # Spring Boot
-      SPRING_APPLICATION_NAME: request-service
-      SPRING_PROFILES_ACTIVE: docker
-      # Ссылки на другие сервисы
-      USER_SERVICE_URL: http://user-service
-      EVENT_SERVICE_URL: http://event-service
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://request-db:5432/requestdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8084
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
     healthcheck:
       test: >
         curl -s http://discovery-server:8761/eureka/apps/REQUEST-SERVICE |
@@ -347,22 +305,13 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    networks:
-      - ewm-network
 
 # ===================================================================
 # VOLUMES
 # ===================================================================
 volumes:
   stats-db-data:
-  user-db-data:
-  category-db-data:
   event-db-data:
+  user-db-data:
   request-db-data:
-
-# ===================================================================
-# NETWORKS
-# ===================================================================
-networks:
-  ewm-network:
-    driver: bridge
+  category-db-data:

@@ -1,19 +1,5 @@
-spring:
-  application:
-    name: discovery-server
-
 server:
   port: 8761
-
-#eureka:
-#  client:
-#    serviceUrl:
-#      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
-#    register-with-eureka: true
-#    fetch-registry: true
-#  instance:
-#    preferIpAddress: true
-#    hostname: gateway-server
 
 eureka:
   instance:

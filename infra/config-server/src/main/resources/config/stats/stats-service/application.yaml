@@ -1,22 +1,19 @@
-server:
-  port: 9090
-
 spring:
   datasource:
-    driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://${STATS_DB_HOST:localhost}:${STATS_DB_PORT:6543}/${STATS_DB_NAME:ewm_stats}
-    username: ${STATS_DB_USERNAME:postgres_stats}
-    password: ${STATS_DB_PASSWORD:postgres}
+    url: jdbc:postgresql://stats-db:5432/statsdb
+    username: dbuser
+    password: 12345
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
     properties:
       hibernate:
+        default_schema: public
         format_sql: true
-  sql:
-    init:
-      mode: always
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+  logging:
+    level:
+      ru.practicum.ewm: DEBUG

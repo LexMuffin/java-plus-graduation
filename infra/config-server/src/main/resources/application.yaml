@@ -13,16 +13,13 @@ spring:
             - classpath:config/stats/{application}
 
 server:
-  port: 8888
+  port: ${SERVER_PORT:8888}
 
 eureka:
   client:
-    registerWithEureka: true
     serviceUrl:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
-    fetch-registry: true
-    enabled: true
+      defaultZone: http://localhost:8761/eureka/
   instance:
-    preferIpAddress: true
-    hostname: config-server
+    prefer-ip-address: true
     instance-id: "${spring.application.name}:${random.value}"
+    leaseRenewalIntervalInSeconds: 30
