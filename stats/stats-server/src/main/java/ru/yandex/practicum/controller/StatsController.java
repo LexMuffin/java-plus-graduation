@@ -9,6 +9,7 @@ import ru.yandex.practicum.dto.stats.EndpointHitDto;
 import ru.yandex.practicum.dto.stats.ViewStatsDto;
 import ru.yandex.practicum.service.StatsService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -27,8 +28,8 @@ public class StatsController {
 
     @GetMapping("/stats")
     public List<ViewStatsDto> getStats(
-            @RequestParam String start,
-            @RequestParam String end,
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(defaultValue = "false") boolean unique
     ) {

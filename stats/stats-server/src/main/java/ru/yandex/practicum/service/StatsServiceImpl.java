@@ -44,30 +44,18 @@ public class StatsServiceImpl implements StatsService {
     }
 
     @Override
-    public List<ViewStatsDto> getStats(String start, String end, List<String> uris, boolean unique) {
+    public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         log.info("Получение статистики: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
 
-            LocalDateTime startTime = parseDateTime(start);
-            LocalDateTime endTime = parseDateTime(end);
-
-            validateDateRange(startTime, endTime);
 
             List<ViewStatsDto> stats = unique
-                    ? statsRepository.findUniqueStats(startTime, endTime, uris)
-                    : statsRepository.findAllStats(startTime, endTime, uris);
+                    ? statsRepository.findUniqueStats(start, end, uris)
+                    : statsRepository.findAllStats(start, end, uris);
 
             log.info("Найдено записей: {}", stats.size());
             return stats;
     }
 
-    private LocalDateTime parseDateTime(String dateTime) {
-        try {
-            return LocalDateTime.parse(dateTime, FORMATTER);
-        } catch (Exception e) {
-            log.error("Ошибка парсинга даты: {}", dateTime);
-            throw new IllegalArgumentException("Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss", e);
-        }
-    }
 
     private void validateDateRange(LocalDateTime start, LocalDateTime end) {
         if (end.isBefore(start)) {

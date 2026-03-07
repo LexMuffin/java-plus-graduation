@@ -362,8 +362,8 @@ public class EventServiceImpl implements EventService {
             log.info("Запрос статистики для события {} с {} по {}", eventId, start, end);
 
             List<ViewStatsDto> stats = statsClient.getStats(
-                    start.format(FORMATTER),
-                    end.format(FORMATTER),
+                    start,
+                    end,
                     List.of("/events/" + eventId),
                     true
             );
@@ -535,8 +535,8 @@ public class EventServiceImpl implements EventService {
 
         try {
             List<ViewStatsDto> stats = statsClient.getStats(
-                    start.format(FORMATTER),
-                    LocalDateTime.now().plusMinutes(1).format(FORMATTER),
+                    start,
+                    LocalDateTime.now().plusMinutes(1),
                     uris,
                     true
             );
@@ -608,10 +608,8 @@ public class EventServiceImpl implements EventService {
             LocalDateTime start = LocalDateTime.now().minusYears(100);
             LocalDateTime end = LocalDateTime.now().plusYears(100);
 
-            String startStr = start.format(FORMATTER);
-            String endStr = end.format(FORMATTER);
 
-            List<ViewStatsDto> stats = statsClient.getStats(startStr, endStr, uris, true);
+            List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, true);
 
             return stats.stream()
                     .collect(Collectors.toMap(

@@ -29,5 +29,6 @@ public class EndpointHitDto {
 
     @NotNull
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime timestamp;
+    @Builder.Default
+    LocalDateTime timestamp = LocalDateTime.now();
 }
