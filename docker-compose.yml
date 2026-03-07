@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
+    networks:
+      - app-network
 
   config-server:
     build: infra/config-server
@@ -36,6 +38,8 @@ services:
       timeout: 10s
       retries: 10
       start_period: 90s
+    networks:
+      - app-network
 
   gateway-server:
     build: infra/gateway-server
@@ -59,6 +63,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      - app-network
 
   # ===================================================================
   # DATABASES - отдельная БД для каждого сервиса
@@ -80,6 +86,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
 
   user-db:
     image: postgres:16.1
@@ -98,6 +106,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
 
   category-db:
     image: postgres:16.1
@@ -116,6 +126,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
 
   event-db:
     image: postgres:16.1
@@ -134,6 +146,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
 
   request-db:
     image: postgres:16.1
@@ -152,6 +166,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
   # ===================================================================
   # BUSINESS LOGIC SERVICES
   # ===================================================================
@@ -183,6 +199,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - app-network
 
   user-service:
     build:
@@ -213,6 +231,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - app-network
 
   category-service:
     build:
@@ -243,6 +263,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - app-network
 
   event-service:
     build:
@@ -275,6 +297,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - app-network
 
   request-service:
     build:
@@ -305,6 +329,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - app-network
 
 # ===================================================================
 # VOLUMES
@@ -315,3 +341,7 @@ volumes:
   user-db-data:
   request-db-data:
   category-db-data:
+
+networks:
+  app-network:
+    driver: bridge
