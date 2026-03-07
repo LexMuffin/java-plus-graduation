@@ -40,6 +40,11 @@
 spring:
   application:
     name: category-service
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:6544/category
+    username: category
+    password: category
   config:
     import: "optional:configserver:"
   cloud:
