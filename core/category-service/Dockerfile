@@ -7,8 +7,9 @@ ARG CONFIG_SERVER_URI=http://config-server:8888
 ARG CONFIG_SERVER_IMPORT=configserver:http://config-server:8888
 ARG PROFILE=default
 
-ARG CATEGORY_DB_HOST=category-db
-ARG CATEGORY_DB_PORT=5432
+# Универсальные значения по умолчанию (переопределяются в CI)
+ARG CATEGORY_DB_HOST=localhost
+ARG CATEGORY_DB_PORT=6544
 ARG CATEGORY_DB_NAME=category
 ARG CATEGORY_DB_USERNAME=category
 ARG CATEGORY_DB_PASSWORD=category
