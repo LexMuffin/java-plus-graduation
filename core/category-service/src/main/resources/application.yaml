@@ -5,7 +5,7 @@ spring:
     import: "optional:configserver:"
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5433/category_service
+    url: jdbc:postgresql://main-db:5433/category_service
     username: dbuser
     password: 12345
   cloud:
