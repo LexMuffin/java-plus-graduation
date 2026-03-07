@@ -227,7 +227,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://category-db:5432/category
       SPRING_DATASOURCE_USERNAME: category
       SPRING_DATASOURCE_PASSWORD: category
+      EUREKA_INSTANCE_HOSTNAME: category-service
+      SPRING_APPLICATION_NAME: category-service
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SERVER_PORT: 0
     networks:
       - ewm-network
 
