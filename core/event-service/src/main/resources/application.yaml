@@ -1,6 +1,10 @@
 server:
   port: ${SERVER_PORT:0}
 
+app:
+  stats:
+    url: http://localhost:9090
+
 spring:
   application:
     name: event-service
