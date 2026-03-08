@@ -7,7 +7,6 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@ComponentScan
 public class StatsServer {
     public static void main(String[] args) {
         SpringApplication.run(StatsServer.class, args);
