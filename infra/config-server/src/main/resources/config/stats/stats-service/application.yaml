@@ -23,6 +23,6 @@ spring:
     jdbc:
       time_zone: UTC
 
-  logging:
-    level:
-      ru.practicum.ewm: DEBUG
+logging:
+  level:
+    ru.practicum.ewm: DEBUG

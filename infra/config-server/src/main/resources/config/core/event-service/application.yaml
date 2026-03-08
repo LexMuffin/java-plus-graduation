@@ -14,6 +14,9 @@ spring:
         default_schema: public
         format_sql: false
 
-  logging:
-    level:
-      ru.practicum.ewm: DEBUG
+logging:
+  level:
+    ru.practicum.ewm: DEBUG
+
+stats-server:
+  name: stats-server
