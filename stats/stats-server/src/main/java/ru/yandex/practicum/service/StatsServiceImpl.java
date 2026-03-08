@@ -30,27 +30,30 @@ public class StatsServiceImpl implements StatsService {
     @Override
     @Transactional
     public void hit(EndpointHitDto dto) {
-        validateHit(dto);
-
-        log.debug("Сохранение просмотра: {}", dto);
-        EndpointHit entity = statsMapper.toEntity(dto);
-        statsRepository.save(entity);
-
-        log.info("Просмотр успешно сохранен с ID: {}", entity.getId());
+        try {
+            System.out.println("🔍 [STATS-SERVER] Получен хит: " + dto);
+            EndpointHit entity = statsMapper.toEntity(dto);
+            EndpointHit saved = statsRepository.save(entity);
+            System.out.println("✅ [STATS-SERVER] Хит сохранен с ID: " + saved.getId());
+        } catch (Exception e) {
+            System.err.println("❌ [STATS-SERVER] Ошибка сохранения хита: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override
-    public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
-        log.info("Получение статистики: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
+    public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end,
+                                       List<String> uris, boolean unique) {
+        System.out.println("🔍 [STATS-SERVER] Запрос статистики: start=" + start +
+                ", end=" + end + ", uris=" + uris + ", unique=" + unique);
 
-        validateDateRange(start, end);
+        List<ViewStatsDto> stats = unique
+                ? statsRepository.findUniqueStats(start, end, uris)
+                : statsRepository.findAllStats(start, end, uris);
 
-            List<ViewStatsDto> stats = unique
-                    ? statsRepository.findUniqueStats(start, end, uris)
-                    : statsRepository.findAllStats(start, end, uris);
-
-            log.info("Найдено записей: {}", stats.size());
-            return stats;
+        System.out.println("✅ [STATS-SERVER] Найдено записей: " + stats.size());
+        return stats;
     }
 
 

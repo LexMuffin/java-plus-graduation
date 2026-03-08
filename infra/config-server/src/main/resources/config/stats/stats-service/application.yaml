@@ -25,4 +25,6 @@ spring:
 
 logging:
   level:
-    ru.practicum.ewm: DEBUG
+    ru.yandex.practicum: DEBUG
+    org.springframework.web.client: DEBUG
+    feign: DEBUG
