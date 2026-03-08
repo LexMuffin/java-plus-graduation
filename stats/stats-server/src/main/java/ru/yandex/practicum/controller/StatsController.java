@@ -12,6 +12,7 @@ import ru.yandex.practicum.service.StatsService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -41,5 +42,12 @@ public class StatsController {
 
         log.info("GET /stats - найдено записей: {}", stats.size());
         return stats;
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Map<String, String> handleException(Exception e) {
+        log.error("Ошибка: ", e);
+        return Map.of("error", e.getMessage());
     }
 }
