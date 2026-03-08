@@ -12,7 +12,7 @@ import ru.yandex.practicum.dto.stats.ViewStatsDto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@FeignClient(name = "stats-service")
+@FeignClient(name = "stats-service", url = "${STATS_SERVICE_URL:http://localhost:9090}")
 public interface StatsServiceClient {
 
     @PostMapping("/hit")
