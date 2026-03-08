@@ -566,8 +566,8 @@ public class EventServiceImpl implements EventService {
 
     private Long getViewsForEvent(Long eventId) {
         try {
-            LocalDateTime start = LocalDateTime.now().minusYears(100);
-            LocalDateTime end = LocalDateTime.now().plusYears(1);
+            LocalDateTime start = LocalDateTime.now().minusMinutes(5);
+            LocalDateTime end = LocalDateTime.now().plusMinutes(5);
 
             List<ViewStatsDto> stats = statsClient.getStats(
                     start,
@@ -576,7 +576,9 @@ public class EventServiceImpl implements EventService {
                     true
             );
 
-            return stats.isEmpty() ? 0 : stats.get(0).getHits();
+            Long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
+            log.info("Для события {} получено views = {} из статистики", eventId, views);
+            return views;
         } catch (Exception e) {
             log.error("Ошибка при получении статистики: {}", e.getMessage());
             return 0L;
