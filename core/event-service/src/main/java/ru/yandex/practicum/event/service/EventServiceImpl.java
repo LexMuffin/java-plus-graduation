@@ -45,8 +45,6 @@ public class EventServiceImpl implements EventService {
     CategoryServiceClient categoryClient;
     RequestServiceClient requestClient;
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
     @Override
     @Transactional
     public EventFullDto createEvent(Long userId, NewEventDto dto) {
@@ -302,7 +300,7 @@ public class EventServiceImpl implements EventService {
             );
             List<Event> events = new ArrayList<>(eventsPage.getContent());
 
-            sendHitToStats(request);
+            sendHitToStats("/events", request.getRemoteAddr());
 
             events = enrichEventsWithStats(events);
 
@@ -326,8 +324,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto getPublicEvent(Long eventId, HttpServletRequest request) {
-        String ip = request.getRemoteAddr();
-        log.info("Публичный запрос события: {}, IP: {}", eventId, ip);
+        log.info("Публичный запрос события: {}, IP: {}", eventId, request.getRemoteAddr());
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
@@ -336,18 +333,7 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
         }
 
-        try {
-            EndpointHitDto hitDto = EndpointHitDto.builder()
-                    .app("ewm-main-service")
-                    .uri("/events/" + eventId)
-                    .ip(ip)
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            statsClient.saveHit(hitDto);
-            log.info("Хит сохранен для события {}, IP: {}", eventId, ip);
-        } catch (Exception e) {
-            log.error("Ошибка при отправке хита: {}", e.getMessage());
-        }
+        sendHitToStats("/events/" + eventId, request.getRemoteAddr());
 
         try {
             LocalDateTime start = event.getCreatedOn() != null ?
@@ -459,24 +445,13 @@ public class EventServiceImpl implements EventService {
         return eventMapper.toFullDto(event);
     }
 
-    private void sendHitToStats(HttpServletRequest request) {
-        try {
-            String queryString = request.getQueryString();
-            String uri = request.getRequestURI() + (queryString != null ? "?" + queryString : "");
-            String ip = request.getRemoteAddr();
-
+    private void sendHitToStats(String uri, String ip) {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
                     .uri(uri)
                     .ip(ip)
-                    .timestamp(LocalDateTime.now())
                     .build();
-
             statsClient.saveHit(hitDto);
-            log.debug("Хит отправлен в статистику для поиска событий");
-        } catch (Exception e) {
-            log.error("Ошибка при отправке хита на поиск в статистику: {}", e.getMessage());
-        }
     }
 
     private List<Event> enrichEventsWithStats(List<Event> events) {
