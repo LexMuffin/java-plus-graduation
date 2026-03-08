@@ -27,7 +27,6 @@ import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -278,13 +277,13 @@ public class EventServiceImpl implements EventService {
         log.info("Публичный поиск: {}", params);
 
         try {
-
             if (params.getRangeStart() != null && params.getRangeEnd() != null
                     && params.getRangeStart().isAfter(params.getRangeEnd())) {
                 log.warn("start после end: {} > {}", params.getRangeStart(), params.getRangeEnd());
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Дата начала должна быть раньше даты окончания");
             }
+
             LocalDateTime rangeStart = params.getRangeStart() != null ?
                     params.getRangeStart() : LocalDateTime.now();
             LocalDateTime rangeEnd = params.getRangeEnd() != null ?
@@ -335,51 +334,19 @@ public class EventServiceImpl implements EventService {
 
         sendHitToStats("/events/" + eventId, request.getRemoteAddr());
 
-        try {
-            LocalDateTime start = event.getCreatedOn() != null ?
-                    event.getCreatedOn() : LocalDateTime.now().minusDays(1);
-
-            if (start.isAfter(LocalDateTime.now().minusDays(1))) {
-                start = LocalDateTime.now().minusDays(1);
-            }
-
-            LocalDateTime end = LocalDateTime.now().plusMinutes(1);
-
-            log.info("Запрос статистики для события {} с {} по {}", eventId, start, end);
-
-            List<ViewStatsDto> stats = statsClient.getStats(
-                    start,
-                    end,
-                    List.of("/events/" + eventId),
-                    true
-            );
-
-            long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
-
-            if (views == 0) {
-                views = 1;
-            }
-
-            log.info("Установлено views = {} для события {}", views, eventId);
-            event.setViews(views);
-
-        } catch (Exception e) {
-            log.error("Ошибка при получении статистики: {}", e.getMessage());
-            if (event.getViews() == null || event.getViews() == 0) {
-                event.setViews(1L);
-            }
-        }
+        long views = getViewsForEvent(eventId);
+        event.setViews(views);
 
         try {
             Long confirmedRequests = requestClient.getConfirmedRequests(eventId);
             event.setConfirmedRequests(confirmedRequests != null ? confirmedRequests : 0L);
         } catch (Exception e) {
             log.warn("Не удалось получить подтвержденные запросы: {}", e.getMessage());
+            event.setConfirmedRequests(0L);
         }
 
-        eventRepository.save(event);
-
         EventFullDto dto = eventMapper.toFullDto(event);
+
         try {
             CategoryDto categoryDto = categoryClient.getCategory(event.getCategory());
             dto.setCategory(categoryDto);
@@ -446,12 +413,39 @@ public class EventServiceImpl implements EventService {
     }
 
     private void sendHitToStats(String uri, String ip) {
+        try {
             EndpointHitDto hitDto = EndpointHitDto.builder()
                     .app("ewm-main-service")
                     .uri(uri)
                     .ip(ip)
+                    .timestamp(LocalDateTime.now())
                     .build();
             statsClient.saveHit(hitDto);
+            log.debug("Хит отправлен: {}", uri);
+        } catch (Exception e) {
+            log.error("Ошибка при отправке хита: {}", e.getMessage());
+        }
+    }
+
+    private void setViewsForEvent(Event event) {
+        try {
+            LocalDateTime start = LocalDateTime.now().minusYears(100);
+            LocalDateTime end = LocalDateTime.now().plusYears(1);
+
+            List<ViewStatsDto> stats = statsClient.getStats(
+                    start,
+                    end,
+                    List.of("/events/" + event.getId()),
+                    true
+            );
+
+            long views = stats.isEmpty() ? 0 : stats.get(0).getHits();
+            event.setViews(views);
+            log.info("Установлено views = {} для события {}", views, event.getId());
+        } catch (Exception e) {
+            log.error("Ошибка при получении статистики: {}", e.getMessage());
+            event.setViews(0L);
+        }
     }
 
     private List<Event> enrichEventsWithStats(List<Event> events) {
@@ -459,11 +453,16 @@ public class EventServiceImpl implements EventService {
 
         addViewsToEvents(events);
 
-        Map<Long, Long> confirmedMap = Optional.of(events.stream().map(Event::getId).toList())
-                .map(requestClient::getConfirmedRequestsBatch)
-                .orElseGet(Collections::emptyMap);
+        try {
+            Map<Long, Long> confirmedMap = requestClient.getConfirmedRequestsBatch(
+                    events.stream().map(Event::getId).collect(Collectors.toList())
+            );
+            events.forEach(e -> e.setConfirmedRequests(confirmedMap.getOrDefault(e.getId(), 0L)));
+        } catch (Exception ex) {
+            log.warn("Не удалось получить подтвержденные запросы: {}", ex.getMessage());
+            events.forEach(e -> e.setConfirmedRequests(0L));
+        }
 
-        events.forEach(e -> e.setConfirmedRequests(confirmedMap.getOrDefault(e.getId(), 0L)));
         return events;
     }
 
@@ -502,7 +501,8 @@ public class EventServiceImpl implements EventService {
             return;
         }
 
-        LocalDateTime start = LocalDateTime.now().minusDays(1);
+        LocalDateTime start = LocalDateTime.now().minusYears(100);
+        LocalDateTime end = LocalDateTime.now().plusYears(1);
 
         List<String> uris = events.stream()
                 .map(event -> "/events/" + event.getId())
@@ -511,7 +511,7 @@ public class EventServiceImpl implements EventService {
         try {
             List<ViewStatsDto> stats = statsClient.getStats(
                     start,
-                    LocalDateTime.now().plusMinutes(1),
+                    end,
                     uris,
                     true
             );
@@ -525,12 +525,6 @@ public class EventServiceImpl implements EventService {
 
             events.forEach(event -> {
                 Long views = viewsMap.getOrDefault(event.getId(), 0L);
-                if (views == 0 && event.getState() == EventState.PUBLISHED) {
-                    if (event.getPublishedOn() != null &&
-                            event.getPublishedOn().isAfter(LocalDateTime.now().minusMinutes(5))) {
-                        views = 1L;
-                    }
-                }
                 event.setViews(views);
             });
 
@@ -570,6 +564,25 @@ public class EventServiceImpl implements EventService {
         if (request.getTitle() != null) event.setTitle(request.getTitle());
     }
 
+    private Long getViewsForEvent(Long eventId) {
+        try {
+            LocalDateTime start = LocalDateTime.now().minusYears(100);
+            LocalDateTime end = LocalDateTime.now().plusYears(1);
+
+            List<ViewStatsDto> stats = statsClient.getStats(
+                    start,
+                    end,
+                    List.of("/events/" + eventId),
+                    true
+            );
+
+            return stats.isEmpty() ? 0 : stats.get(0).getHits();
+        } catch (Exception e) {
+            log.error("Ошибка при получении статистики: {}", e.getMessage());
+            return 0L;
+        }
+    }
+
     private Map<Long, Long> getViewsForEvents(List<Long> eventIds) {
         if (eventIds.isEmpty()) {
             return Collections.emptyMap();
@@ -581,8 +594,7 @@ public class EventServiceImpl implements EventService {
                     .collect(Collectors.toList());
 
             LocalDateTime start = LocalDateTime.now().minusYears(100);
-            LocalDateTime end = LocalDateTime.now().plusYears(100);
-
+            LocalDateTime end = LocalDateTime.now().plusYears(1);
 
             List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, true);
 
