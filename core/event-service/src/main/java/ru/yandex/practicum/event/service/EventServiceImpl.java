@@ -338,7 +338,7 @@ public class EventServiceImpl implements EventService {
 
         try {
             EndpointHitDto hitDto = EndpointHitDto.builder()
-                    .app("main-service")
+                    .app("ewm-main-service")
                     .uri("/events/" + eventId)
                     .ip(ip)
                     .timestamp(LocalDateTime.now())
@@ -466,7 +466,7 @@ public class EventServiceImpl implements EventService {
             String ip = request.getRemoteAddr();
 
             EndpointHitDto hitDto = EndpointHitDto.builder()
-                    .app("main-service")
+                    .app("ewm-main-service")
                     .uri(uri)
                     .ip(ip)
                     .timestamp(LocalDateTime.now())
