@@ -16,6 +16,9 @@ spring:
       hibernate:
         default_schema: public
         format_sql: true
+  sql:
+    init:
+      mode: always
   hibernate:
     jdbc:
       time_zone: UTC

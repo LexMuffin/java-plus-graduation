@@ -11,7 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.practicum.StatsClient;
 import ru.yandex.practicum.client.category.CategoryServiceClient;
 import ru.yandex.practicum.client.request.RequestServiceClient;
 import ru.yandex.practicum.client.stats.StatsServiceClient;
@@ -41,7 +40,7 @@ public class EventServiceImpl implements EventService {
 
     EventRepository eventRepository;
     EventMapper eventMapper;
-    StatsClient statsClient;
+    StatsServiceClient statsClient;
     UserServiceClient userClient;
     CategoryServiceClient categoryClient;
     RequestServiceClient requestClient;
