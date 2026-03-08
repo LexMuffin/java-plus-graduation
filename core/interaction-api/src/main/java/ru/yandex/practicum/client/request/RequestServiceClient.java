@@ -15,6 +15,6 @@ public interface RequestServiceClient {
     @GetMapping("/internal/events/{eventId}/confirmed-requests")
     Long getConfirmedRequests(@PathVariable("eventId") Long eventId);
 
-    @PostMapping("/internal/events/events/confirmed-requests/batch")
+    @PostMapping("/internal/events/confirmed-requests/batch")
     Map<Long, Long> getConfirmedRequestsBatch(@RequestBody List<Long> eventIds);
 }

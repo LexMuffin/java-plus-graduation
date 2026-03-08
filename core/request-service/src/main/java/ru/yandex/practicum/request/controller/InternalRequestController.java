@@ -11,12 +11,12 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/internal/events")
+@RequestMapping("/internal")
 public class InternalRequestController {
 
     private final RequestService requestService;
 
-    @GetMapping("/{eventId}/confirmed-requests")
+    @GetMapping("/events/{eventId}/confirmed-requests")
     public Long getConfirmedRequests(@PathVariable Long eventId) {
         log.info("GET внутренний запрос количества подтверждённых заявок для события {}", eventId);
         return requestService.getConfirmedRequests(eventId);
