@@ -2,13 +2,16 @@ package ru.yandex.practicum;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import ru.yandex.practicum.dto.EndpointHitDto;
-import ru.yandex.practicum.dto.ViewStatsDto;
+import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.dto.stats.EndpointHitDto;
+import ru.yandex.practicum.dto.stats.ViewStatsDto;
 import ru.yandex.practicum.exception.StatsServerUnavailableException;
 import ru.yandex.practicum.exception.InvalidRequestException;
 
@@ -25,12 +28,34 @@ public class StatsClientImpl implements StatsClient {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RestTemplate restTemplate;
+    private final DiscoveryClient discoveryClient;
 
-    @Value("${stats-server.id:stats-server}")
+    @Value("${stats-server.id:stats-service}")
     private String statServiceId;
 
-    public StatsClientImpl(RestTemplate restTemplate) {
+    public StatsClientImpl(RestTemplate restTemplate, DiscoveryClient discoveryClient) {
         this.restTemplate = restTemplate;
+        this.discoveryClient = discoveryClient;
+    }
+
+    private String getServiceUrl() {
+        try {
+            List<ServiceInstance> instances = discoveryClient.getInstances(statServiceId);
+            if (instances == null || instances.isEmpty()) {
+                throw new StatsServerUnavailableException(
+                        "Сервис статистики с id '" + statServiceId + "' не найден"
+                );
+            }
+            ServiceInstance instance = instances.get(0);
+            String url = instance.getUri().toString();
+            log.debug("Получен URL сервиса статистики: {}", url);
+            return url;
+        } catch (Exception e) {
+            log.error("Ошибка получения URL сервиса статистики: {}", e.getMessage());
+            throw new StatsServerUnavailableException(
+                    "Не удалось получить URL сервиса статистики: " + e.getMessage()
+            );
+        }
     }
 
     @Override
@@ -38,8 +63,7 @@ public class StatsClientImpl implements StatsClient {
         log.info("Сохранение хита: {}", hitDto);
 
         try {
-            // Используем имя сервиса в URL
-            String url = String.format("http://%s/hit", statServiceId);
+            String url = getServiceUrl() + "/hit";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -71,7 +95,7 @@ public class StatsClientImpl implements StatsClient {
     }
 
     @Override
-    public List<ViewStatsDto> getStats(String start, String end, List<String> uris, Boolean unique) {
+    public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
         validateDates(start, end);
 
         log.info("Запрос статистики: start={}, end={}, uris={}, unique={}",
@@ -114,13 +138,17 @@ public class StatsClientImpl implements StatsClient {
         }
     }
 
-    private String buildStatsUrl(String start, String end, List<String> uris, Boolean unique) {
-        StringBuilder url = new StringBuilder();
-        url.append(String.format("http://%s/stats?start=%s&end=%s",
-                statServiceId, start, end));
+    private String buildStatsUrl(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
+        String baseUrl = getServiceUrl();
+
+        String startStr = start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String endStr = end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        StringBuilder url = new StringBuilder(baseUrl + "/stats?start=" + startStr + "&end=" + endStr);
 
         if (uris != null && !uris.isEmpty()) {
-            url.append("&uris=").append(String.join(",", uris));
+            uris.stream()
+                    .forEach(uri -> url.append("&uris=").append(uri));
         }
 
         if (Boolean.TRUE.equals(unique)) {
@@ -130,14 +158,11 @@ public class StatsClientImpl implements StatsClient {
         return url.toString();
     }
 
-    private void validateDates(String start, String end) {
-        try {
-            LocalDateTime.parse(start, DATE_FORMATTER);
-            LocalDateTime.parse(end, DATE_FORMATTER);
-        } catch (Exception e) {
-            throw new InvalidRequestException(
-                    "Неверный формат даты. Ожидается: yyyy-MM-dd HH:mm:ss"
-            );
+    private void validateDates(LocalDateTime start, LocalDateTime end) {
+        if (end.isBefore(start)) {
+            log.error("Некорректный диапазон: start={}, end={}", start, end);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Дата начала должна быть раньше даты окончания");
         }
     }
 }

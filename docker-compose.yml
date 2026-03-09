@@ -1,30 +1,347 @@
 services:
+  # ===================================================================
+  # INFRASTRUCTURE SERVICES
+  # ===================================================================
+  discovery-server:
+    build: infra/discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      - EUREKA_INSTANCE_HOSTNAME=discovery-server
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - app-network
+
+  config-server:
+    build: infra/config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    healthcheck:
+      test: >
+        curl -f http://discovery-server:8761/eureka/apps/CONFIG-SERVER |
+        grep -q "<status>UP</status>"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    networks:
+      - app-network
+
+  gateway-server:
+    build: infra/gateway-server
+    container_name: gateway-server
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=8080
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - SPRING_CLOUD_CONFIG_FAIL_FAST=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - app-network
+
+  # ===================================================================
+  # DATABASES - отдельная БД для каждого сервиса
+  # ===================================================================
   stats-db:
     image: postgres:16.1
-    container_name: postgres-ewm-stats-db
+    container_name: stats-db
     ports:
-      - "6543:5432"
+      - "6432:5432"
     environment:
-      POSTGRES_USER: postgres_stats
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ewm_stats
+      - POSTGRES_DB=statsdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - stats-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
 
-  ewm-db:
+  user-db:
     image: postgres:16.1
-    container_name: postgres-ewm-main-db
+    container_name: user-db
     ports:
-      - "5433:5432"
+      - "6433:5432"
     environment:
-      POSTGRES_USER: postgres_main
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ewm_main
+      - POSTGRES_DB=userdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
+
+  category-db:
+    image: postgres:16.1
+    container_name: category-db
+    ports:
+      - "6434:5432"
+    environment:
+      - POSTGRES_DB=categorydb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - category-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  event-db:
+    image: postgres:16.1
+    container_name: event-db
+    ports:
+      - "6435:5432"
+    environment:
+      - POSTGRES_DB=eventdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  request-db:
+    image: postgres:16.1
+    container_name: request-db
+    ports:
+      - "6436:5432"
+    environment:
+      - POSTGRES_DB=requestdb
+      - POSTGRES_USER=dbuser
+      - POSTGRES_PASSWORD=12345
+    volumes:
+      - request-db-data:/var/lib/postgresql/data
+#      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    networks:
+      - app-network
+  # ===================================================================
+  # BUSINESS LOGIC SERVICES
+  # ===================================================================
+  stats-service:
+    build:
+      context: ./stats/stats-server
+      dockerfile: Dockerfile
+    container_name: stats-service
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      stats-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/statsdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    healthcheck:
+      test: >
+        curl -s http://discovery-server:8761/eureka/apps/STATS-SERVICE |
+        grep -q "<status>UP</status>"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app-network
+
+  user-service:
+    build:
+      context: ./core/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    depends_on:
+      user-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-db:5432/userdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8081
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    healthcheck:
+      test: >
+        curl -s http://discovery-server:8761/eureka/apps/USER-SERVICE |
+        grep -q "<status>UP</status>"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app-network
+
+  category-service:
+    build:
+      context: ./core/category-service
+      dockerfile: Dockerfile
+    container_name: category-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    depends_on:
+      category-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://category-db:5432/categorydb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8082
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: >
+        curl -s http://discovery-server:8761/eureka/apps/CATEGORY-SERVICE |
+        grep -q "<status>UP</status>"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app-network
+
+  event-service:
+    build:
+      context: ./core/event-service
+      dockerfile: Dockerfile
+    container_name: event-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    depends_on:
+      event-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      stats-service:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://event-db:5432/eventdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8083
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    healthcheck:
+      test: >
+        curl -s http://discovery-server:8761/eureka/apps/EVENT-SERVICE |
+        grep -q "<status>UP</status>"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app-network
+
+  request-service:
+    build:
+      context: ./core/request-service
+      dockerfile: Dockerfile
+    container_name: request-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    depends_on:
+      request-db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://request-db:5432/requestdb
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=12345
+      - SERVER_PORT=8084
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    healthcheck:
+      test: >
+        curl -s http://discovery-server:8761/eureka/apps/REQUEST-SERVICE |
+        grep -q "<status>UP</status>"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - app-network
+
+# ===================================================================
+# VOLUMES
+# ===================================================================
+volumes:
+  stats-db-data:
+  event-db-data:
+  user-db-data:
+  request-db-data:
+  category-db-data:
+
+networks:
+  app-network:
+    driver: bridge
