@@ -102,7 +102,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Добавляем зависимости на модули с сущностями -->
         <dependency>
             <groupId>ru.practicum</groupId>
             <artifactId>user-service</artifactId>
@@ -113,6 +112,12 @@
             <groupId>ru.practicum</groupId>
             <artifactId>event-service</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ru.practicum</groupId>
+            <artifactId>stats-client</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

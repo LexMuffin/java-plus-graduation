@@ -1,0 +1,14 @@
+@namespace("ru.yandex.practicum.ewm.stats.avro")
+protocol EventSimilarityProtocol {
+
+  record EventSimilarityAvro {
+    long eventA;
+
+    long eventB;
+
+    double score;
+
+    union { null, timestamp_ms } timestamp = null;
+  }
+
+}

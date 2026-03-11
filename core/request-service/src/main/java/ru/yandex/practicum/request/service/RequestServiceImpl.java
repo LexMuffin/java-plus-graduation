@@ -10,6 +10,7 @@ import ru.yandex.practicum.client.event.EventServiceClient;
 import ru.yandex.practicum.client.user.UserServiceClient;
 import ru.yandex.practicum.dto.event.EventFullDto;
 import ru.yandex.practicum.dto.event.EventState;
+import ru.yandex.practicum.ewm.grpc.stats.messages.ActionTypeProto;
 import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.dto.request.EventRequestStatusUpdateRequest;
@@ -20,6 +21,7 @@ import ru.yandex.practicum.dto.user.UserDto;
 import ru.yandex.practicum.request.mapper.RequestMapper;
 import ru.yandex.practicum.request.model.ParticipationRequest;
 import ru.yandex.practicum.request.repository.ParticipationRequestRepository;
+import ru.yandex.practicum.CollectorGrpcClient;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ public class RequestServiceImpl implements RequestService {
     RequestMapper requestMapper;
     UserServiceClient userClient;
     EventServiceClient eventClient;
+    CollectorGrpcClient collectorClient;
 
     @Override
     @Transactional
@@ -111,6 +114,13 @@ public class RequestServiceImpl implements RequestService {
 
         ParticipationRequest saved = requestRepository.save(request);
         log.info("Запрос создан, id: {}, статус: {}", saved.getId(), saved.getStatus());
+
+        try {
+            collectorClient.sendUserAction(userId, eventId, ActionTypeProto.ACTION_REGISTER);
+            log.info("Отправлен регистр в Collector: userId={}, eventId={}", userId, eventId);
+        } catch (Exception e) {
+            log.error("Ошибка при отправке регистра в Collector: {}", e.getMessage());
+        }
 
         return requestMapper.toDto(saved);
     }

@@ -6,10 +6,6 @@ spring:
     name: category-service
   config:
     import: "configserver:"
-#    datasource:
-#      url: jdbc:postgresql://category-db:5432/categorydb
-#      username: dbuser
-#      password: 12345
   cloud:
     config:
       discovery:

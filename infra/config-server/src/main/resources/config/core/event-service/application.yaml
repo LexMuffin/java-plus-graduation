@@ -20,5 +20,19 @@ logging:
     org.springframework.web.client: DEBUG
     feign: DEBUG
 
-stats-server:
-  name: stats-server
+grpc:
+  client:
+    collector:
+      address: 'discovery:///collector'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+    analyzer:
+      address: 'discovery:///analyzer'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+  server:
+    port: 0
