@@ -31,7 +31,6 @@ public class AggregationStarter {
     public AggregationStarter(AggregatorService aggregatorService, AggregatorKafkaProperties kafkaConfig) {
         this.aggregatorService = aggregatorService;
         this.kafkaConfig = kafkaConfig;
-
         this.producer = new KafkaProducer<>(kafkaConfig.getProducerProps());
         this.consumer = new KafkaConsumer<>(kafkaConfig.getConsumerProps());
     }
