@@ -4,22 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.context.ConfigurableApplicationContext;
-import ru.yandex.practicum.starter.AggregationStarter;
 
 @SpringBootApplication
 @EnableDiscoveryClient
 @ConfigurationPropertiesScan
 public class AggregatorApp {
     public static void main(String[] args) {
-        ConfigurableApplicationContext context = SpringApplication.run(AggregatorApp.class, args);
-
-        AggregationStarter aggregatorStarter = context.getBean(AggregationStarter.class);
-
-        Runtime.getRuntime().addShutdownHook(new Thread(aggregatorStarter::stop));
-
-        Thread workerThread = new Thread(aggregatorStarter::start);
-        workerThread.setName("AggregatorWorker");
-        workerThread.start();
+        SpringApplication.run(AggregatorApp.class, args);
     }
 }
