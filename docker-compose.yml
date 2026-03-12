@@ -232,6 +232,8 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
       kafka-init-topics:
         condition: service_completed_successfully
     environment:

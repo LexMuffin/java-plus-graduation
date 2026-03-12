@@ -21,14 +21,14 @@ spring:
 analyzer:
   kafka:
     user-action-consumer-props:
-      bootstrap.servers: "localhost:9092"
+      bootstrap.servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       group.id: "analyzer-group"
       key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value.deserializer: ru.yandex.practicum.deserializer.UserActionDeserializer
       enable.auto.commit: "false"
       auto.offset.reset: "earliest"
     event-similarity-consumer-props:
-      bootstrap.servers: "localhost:9092"
+      bootstrap.servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       group.id: "analyzer-group"
       key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value.deserializer: ru.yandex.practicum.deserializer.EventSimilarityDeserializer

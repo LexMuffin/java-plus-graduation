@@ -29,5 +29,6 @@ eureka:
       defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
   instance:
     prefer-ip-address: true
+    hostname: localhost
     instance-id: "${spring.application.name}:${random.value}"
     leaseRenewalIntervalInSeconds: 20
