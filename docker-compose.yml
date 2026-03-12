@@ -241,6 +241,12 @@ services:
     build: stats/aggregator
     container_name: aggregator
     depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
       collector:
         condition: service_healthy
     environment:
@@ -262,6 +268,12 @@ services:
     build: stats/analyzer
     container_name: analyzer
     depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      stats-db:
+        condition: service_healthy
       aggregator:
         condition: service_healthy
     environment:

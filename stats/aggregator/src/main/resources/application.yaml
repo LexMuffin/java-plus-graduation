@@ -30,3 +30,5 @@ eureka:
     prefer-ip-address: true
     instance-id: "${spring.application.name}:${random.value}"
     leaseRenewalIntervalInSeconds: 10
+    metadata-map:
+      grpc-port: ${grpc.server.port:0}

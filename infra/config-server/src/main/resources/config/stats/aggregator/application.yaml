@@ -1,7 +1,11 @@
+grpc:
+  server:
+    port: 0
+
 aggregator:
   kafka:
     producerProps:
-      bootstrap.servers: "localhost:9092"
+      bootstrap.servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       client.id: "aggregator-client"
       key.serializer: org.apache.kafka.common.serialization.LongSerializer
       value.serializer: ru.yandex.practicum.serializer.GeneralAvroSerializer
@@ -9,7 +13,7 @@ aggregator:
       retries: 3
       enable.idempotence: true
     consumerProps:
-      bootstrap.servers: "localhost:9092"
+      bootstrap.servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
       group.id: "aggregator-group"
       key.deserializer: org.apache.kafka.common.serialization.LongDeserializer
       value.deserializer: ru.yandex.practicum.deserializer.UserActionDeserializer
