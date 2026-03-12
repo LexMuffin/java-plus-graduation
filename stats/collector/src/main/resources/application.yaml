@@ -5,6 +5,7 @@ grpc:
 spring:
   application:
     name: collector
+
   config:
     import: "configserver:"
   cloud:
