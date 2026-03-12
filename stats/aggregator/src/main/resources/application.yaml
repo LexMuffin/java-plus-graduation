@@ -23,6 +23,9 @@ eureka:
       defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
+    initial-instance-info-replication-interval-seconds: 5
+    instance-info-replication-interval-seconds: 5
+    registry-fetch-interval-seconds: 3
   instance:
     prefer-ip-address: true
     instance-id: "${spring.application.name}:${random.value}"
