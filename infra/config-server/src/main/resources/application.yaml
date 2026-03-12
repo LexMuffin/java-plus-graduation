@@ -12,9 +12,6 @@ spring:
             - classpath:config/infra/{application}
             - classpath:config/stats/{application}
 
-server:
-  port: ${SERVER_PORT:8888}
-
 eureka:
   client:
     serviceUrl:
@@ -23,3 +20,6 @@ eureka:
     prefer-ip-address: true
     instance-id: "${spring.application.name}:${random.value}"
     leaseRenewalIntervalInSeconds: 30
+
+server:
+  port: ${SERVER_PORT:8888}
