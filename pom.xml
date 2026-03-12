@@ -19,13 +19,11 @@
     <modules>
         <module>infra</module>
         <module>core</module>
-        <!-- stats модули в правильном порядке -->
         <module>stats/serialization/avro-schemas</module>
         <module>stats/serialization/proto-schemas</module>
         <module>stats/collector</module>
         <module>stats/aggregator</module>
         <module>stats/analyzer</module>
-        <module>stats/stats-server</module>
         <module>stats/stats-client</module>
     </modules>
 

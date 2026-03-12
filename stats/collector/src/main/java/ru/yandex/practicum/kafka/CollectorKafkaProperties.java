@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "collector.kafka.config")
+@ConfigurationProperties(prefix = "collector.kafka")
 public class CollectorKafkaProperties {
     private String bootstrapServers;
     private String clientIdConfig;

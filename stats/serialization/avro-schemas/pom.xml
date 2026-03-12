@@ -59,7 +59,7 @@
                             <goal>schema</goal>
                         </goals>
                         <configuration>
-                            <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+                            <sourceDirectory>${project.basedir}/src/main/java/ru/yandex/practicum/avro</sourceDirectory>
                             <outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>
                             <stringType>String</stringType>
                             <fieldVisibility>private</fieldVisibility>
