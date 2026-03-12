@@ -12,7 +12,6 @@
     <artifactId>stats</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>stats-server</module>
         <module>stats-client</module>
         <module>aggregator</module>
         <module>analyzer</module>

@@ -25,6 +25,8 @@ services:
       timeout: 5s
       retries: 30
       start_period: 60s
+    networks:
+      - app-network
 
   kafka-init-topics:
     image: confluentinc/confluent-local:7.4.3
@@ -43,6 +45,8 @@ services:
         echo 'Topics created'
       "
     init: true
+    networks:
+      - app-network
 
   discovery-server:
     build: infra/discovery-server
@@ -216,55 +220,39 @@ services:
     build: stats/collector
     container_name: collector
     ports:
-      - "9093:9093"
+      - "9091:9091"
     depends_on:
-      discovery-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
       kafka-init-topics:
         condition: service_completed_successfully
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SERVER_PORT=9093
+      - SERVER_PORT=9091
+    restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/actuator/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9091/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless-stopped
     networks:
       - app-network
 
   aggregator:
     build: stats/aggregator
     container_name: aggregator
-    ports:
-      - "9094:9094"
     depends_on:
-      discovery-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
       collector:
         condition: service_healthy
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SERVER_PORT=9094
+      - SERVER_PORT=9092
+    restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9094/actuator/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9092/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless-stopped
     networks:
       - app-network
 
@@ -272,28 +260,20 @@ services:
     build: stats/analyzer
     container_name: analyzer
     ports:
-      - "9095:9095"
+      - "9093:9093"
     depends_on:
-      discovery-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      stats-db:
-        condition: service_healthy
       aggregator:
         condition: service_healthy
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SERVER_PORT=9095
+      - SERVER_PORT=9093
+    restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9095/actuator/health" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless-stopped
     networks:
       - app-network
 
@@ -377,8 +357,6 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-#      stats-service:
-#        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://event-db:5432/eventdb
       - SPRING_DATASOURCE_USERNAME=dbuser
