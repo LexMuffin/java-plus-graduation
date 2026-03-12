@@ -1,6 +1,10 @@
 server:
   port: 0
 
+grpc:
+  server:
+    port: 0
+
 spring:
   application:
     name: aggregator
@@ -21,6 +25,8 @@ eureka:
   client:
     serviceUrl:
       defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
   instance:
     prefer-ip-address: true
     instance-id: "${spring.application.name}:${random.value}"
