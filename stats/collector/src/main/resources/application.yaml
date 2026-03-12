@@ -1,6 +1,11 @@
 grpc:
   server:
     port: 0
+    keepalive:
+      time: 600
+      timeout: 20
+      permit-keepalive-without-calls: true
+      permit-keepalive-time: 600
 
 spring:
   application:
