@@ -226,6 +226,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SERVER_PORT=9091
     restart: unless-stopped
     networks:
       - app-network
@@ -240,6 +241,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SERVER_PORT=9092
     restart: unless-stopped
     networks:
       - app-network
@@ -254,6 +256,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SERVER_PORT=9093
     restart: unless-stopped
     networks:
       - app-network
