@@ -215,6 +215,8 @@ services:
   collector:
     build: stats/collector
     container_name: collector
+    ports:
+      - "9091:9091"
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -267,6 +269,8 @@ services:
   analyzer:
     build: stats/analyzer
     container_name: analyzer
+    ports:
+      - "9093:9093"
     depends_on:
       discovery-server:
         condition: service_healthy
