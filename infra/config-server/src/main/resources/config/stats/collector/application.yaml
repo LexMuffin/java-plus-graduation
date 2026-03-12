@@ -1,7 +1,14 @@
 collector:
   kafka:
-    bootstrapServers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrapServers: "localhost:9092"
     clientIdConfig: "collector-client"
     producerKeySerializer: org.apache.kafka.common.serialization.LongSerializer
     producerValueSerializer: ru.yandex.practicum.serializer.GeneralAvroSerializer
     userActionTopic: "stats.user-actions.v1"
+
+logging:
+  level:
+    ru.yandex.practicum: DEBUG
+    io.grpc: DEBUG
+    net.devh.boot.grpc: DEBUG
+    com.netflix.discovery: DEBUG

@@ -3,7 +3,7 @@ services:
   # INFRASTRUCTURE SERVICES
   # ===================================================================
   kafka:
-    image: confluentinc/confluent-local:7.4.10  # Обновить версию
+    image: confluentinc/confluent-local:7.4.10
     hostname: kafka
     container_name: kafka
     ports:
@@ -12,19 +12,16 @@ services:
     restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
-      # Добавить security protocol map
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
       KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
-      # ИЗМЕНИТЬ LISTENERS на 0.0.0.0
       KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_JMX_PORT: 9101
       KAFKA_JMX_HOSTNAME: localhost
       CLUSTER_ID: 'K0EA9p0yEe6MkAAAAkKsEg'
-      # Добавить параметры топиков
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -263,8 +260,6 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-      collector:
-        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
@@ -292,7 +287,7 @@ services:
         condition: service_healthy
       stats-db:
         condition: service_healthy
-      aggregator:
+      kafka:
         condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka/
@@ -389,8 +384,6 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
-#      stats-service:
-#        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://event-db:5432/eventdb
       - SPRING_DATASOURCE_USERNAME=dbuser
