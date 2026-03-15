@@ -13,7 +13,8 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(basePackages = {
         "ru.yandex.practicum.request",
         "ru.yandex.practicum.client",
-        "ru.yandex.practicum.exception"
+        "ru.yandex.practicum.exception",
+        "ru.yandex.practicum"
 })
 public class RequestServiceApplication {
     public static void main(String[] args) {

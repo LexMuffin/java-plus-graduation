@@ -17,3 +17,13 @@ spring:
 logging:
   level:
     ru.practicum.practicum: DEBUG
+
+grpc:
+  client:
+    collector:
+      address: 'discovery:///collector'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+  server:
+    port: 0

@@ -27,4 +27,9 @@ public class InternalRequestController {
         log.info("POST внутренний пакетный запрос для {} событий", eventIds.size());
         return requestService.getConfirmedRequestsBatch(eventIds);
     }
+
+    @PostMapping("{eventId}/participant/{userId}")
+    public boolean isUserParticipant(@PathVariable Long userId, @PathVariable Long eventId) {
+        return requestService.checkUserParticipated(userId, eventId);
+    }
 }

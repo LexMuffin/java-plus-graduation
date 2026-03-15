@@ -16,11 +16,16 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<modules>
+    <modules>
         <module>infra</module>
-		<module>core</module>
-		<module>stats</module>
-	</modules>
+        <module>core</module>
+        <module>stats/serialization/avro-schemas</module>
+        <module>stats/serialization/proto-schemas</module>
+        <module>stats/collector</module>
+        <module>stats/aggregator</module>
+        <module>stats/analyzer</module>
+        <module>stats/stats-client</module>
+    </modules>
 
 
 	<properties>

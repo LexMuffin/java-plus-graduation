@@ -10,6 +10,7 @@ import ru.yandex.practicum.client.event.EventServiceClient;
 import ru.yandex.practicum.client.user.UserServiceClient;
 import ru.yandex.practicum.dto.event.EventFullDto;
 import ru.yandex.practicum.dto.event.EventState;
+import ru.yandex.practicum.ewm.grpc.stats.messages.ActionTypeProto;
 import ru.yandex.practicum.exception.ConflictException;
 import ru.yandex.practicum.exception.NotFoundException;
 import ru.yandex.practicum.dto.request.EventRequestStatusUpdateRequest;
@@ -20,6 +21,7 @@ import ru.yandex.practicum.dto.user.UserDto;
 import ru.yandex.practicum.request.mapper.RequestMapper;
 import ru.yandex.practicum.request.model.ParticipationRequest;
 import ru.yandex.practicum.request.repository.ParticipationRequestRepository;
+import ru.yandex.practicum.CollectorGrpcClient;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ public class RequestServiceImpl implements RequestService {
     RequestMapper requestMapper;
     UserServiceClient userClient;
     EventServiceClient eventClient;
+    CollectorGrpcClient collectorClient;
 
     @Override
     @Transactional
@@ -58,7 +61,14 @@ public class RequestServiceImpl implements RequestService {
 
         EventFullDto eventDto;
         try {
+            // Используем внутренний метод для получения события
             eventDto = eventClient.getInternalEvent(eventId);
+            log.debug("Событие получено: id={}, initiatorId={}, state={}, limit={}, moderation={}",
+                    eventDto.getId(),
+                    eventDto.getInitiator().getId(),
+                    eventDto.getState(),
+                    eventDto.getParticipantLimit(),
+                    eventDto.getRequestModeration());
         } catch (FeignException.NotFound e) {
             log.error("Событие с id {} не найдено", eventId);
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
@@ -68,24 +78,25 @@ public class RequestServiceImpl implements RequestService {
         }
 
         if (eventDto.getInitiator().getId().equals(userId)) {
-            log.error("Инициатор не может подать заявку");
+            log.error("Инициатор {} пытается подать заявку на своё событие {}", userId, eventId);
             throw new ConflictException("Инициатор события не может добавить запрос на участие");
         }
 
         if (eventDto.getState() != EventState.PUBLISHED) {
-            log.error("Событие не опубликовано");
+            log.error("Событие {} не опубликовано, текущий статус: {}", eventId, eventDto.getState());
             throw new ConflictException("Нельзя участвовать в неопубликованном событии");
         }
 
         if (requestRepository.existsByEventAndRequester(eventId, userId)) {
-            log.error("Запрос уже существует");
+            log.error("Запрос от пользователя {} на событие {} уже существует", userId, eventId);
             throw new ConflictException("Нельзя добавить повторный запрос");
         }
 
         if (eventDto.getParticipantLimit() > 0) {
             int confirmed = requestRepository.countByEventAndStatus(eventId, RequestStatus.CONFIRMED);
+            log.debug("Текущее количество подтвержденных запросов: {}/{}", confirmed, eventDto.getParticipantLimit());
             if (confirmed >= eventDto.getParticipantLimit()) {
-                log.error("Лимит участников исчерпан");
+                log.error("Лимит участников исчерпан: {}/{}", confirmed, eventDto.getParticipantLimit());
                 throw new ConflictException("Достигнут лимит запросов на участие");
             }
         }
@@ -111,6 +122,13 @@ public class RequestServiceImpl implements RequestService {
 
         ParticipationRequest saved = requestRepository.save(request);
         log.info("Запрос создан, id: {}, статус: {}", saved.getId(), saved.getStatus());
+
+        try {
+            collectorClient.sendUserAction(userId, eventId, ActionTypeProto.ACTION_REGISTER);
+            log.info("Отправлен регистр в Collector: userId={}, eventId={}", userId, eventId);
+        } catch (Exception e) {
+            log.error("Ошибка при отправке регистра в Collector: {}", e.getMessage());
+        }
 
         return requestMapper.toDto(saved);
     }
@@ -161,7 +179,9 @@ public class RequestServiceImpl implements RequestService {
 
         EventFullDto eventDto;
         try {
-            eventDto = eventClient.getEvent(eventId);
+            // ИСПРАВЛЕНИЕ: используем внутренний метод вместо getEvent
+            eventDto = eventClient.getInternalEvent(eventId);
+            log.debug("Событие получено: id={}, initiatorId={}", eventDto.getId(), eventDto.getInitiator().getId());
         } catch (FeignException.NotFound e) {
             log.error("Событие с id {} не найдено", eventId);
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
@@ -171,7 +191,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         if (!eventDto.getInitiator().getId().equals(userId)) {
-            log.error("Доступ запрещен");
+            log.error("Доступ запрещен: пользователь {} не является инициатором события {}", userId, eventId);
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
         }
 
@@ -186,7 +206,9 @@ public class RequestServiceImpl implements RequestService {
 
         EventFullDto eventDto;
         try {
-            eventDto = eventClient.getEvent(eventId);
+            // ИСПРАВЛЕНИЕ: используем внутренний метод вместо getEvent
+            eventDto = eventClient.getInternalEvent(eventId);
+            log.debug("Событие получено: id={}, initiatorId={}", eventDto.getId(), eventDto.getInitiator().getId());
         } catch (FeignException.NotFound e) {
             log.error("Событие с id {} не найдено", eventId);
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
@@ -196,7 +218,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         if (!eventDto.getInitiator().getId().equals(userId)) {
-            log.error("Доступ запрещен");
+            log.error("Доступ запрещен: пользователь {} не является инициатором события {}", userId, eventId);
             return new EventRequestStatusUpdateResult(new ArrayList<>(), new ArrayList<>());
         }
 
@@ -275,5 +297,10 @@ public class RequestServiceImpl implements RequestService {
                         row -> (Long) row[1],
                         (existing, replacement) -> existing
                 ));
+    }
+
+    @Override
+    public boolean checkUserParticipated(Long userId, Long eventId) {
+        return requestRepository.existsByEventAndRequester(userId, eventId);
     }
 }

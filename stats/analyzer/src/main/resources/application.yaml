@@ -1,0 +1,33 @@
+grpc:
+  server:
+    port: 0
+    keepalive:
+      time: 600
+      timeout: 20
+      permit-keepalive-without-calls: true
+      permit-keepalive-time: 600
+
+spring:
+  application:
+    name: analyzer
+
+  config:
+    import: "configserver:"
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        serviceId: config-server
+      fail-fast: true
+      retry:
+        useRandomPolicy: true
+        max-interval: 6000
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka/}  # http://${eureka.instance.hostname:localhost}:${eureka.instance.port:8761}/eureka/
+  instance:
+    prefer-ip-address: true
+    instance-id: "${spring.application.name}:${random.value}"
+    leaseRenewalIntervalInSeconds: 10
