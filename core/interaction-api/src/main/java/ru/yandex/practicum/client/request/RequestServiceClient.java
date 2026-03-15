@@ -17,4 +17,7 @@ public interface RequestServiceClient {
 
     @PostMapping("/internal/events/confirmed-requests/batch")
     Map<Long, Long> getConfirmedRequestsBatch(@RequestBody List<Long> eventIds);
+
+    @GetMapping("/internal/{eventId}/participant/{userId}")
+    boolean checkUserParticipated(@PathVariable Long userId, @PathVariable Long eventId);
 }

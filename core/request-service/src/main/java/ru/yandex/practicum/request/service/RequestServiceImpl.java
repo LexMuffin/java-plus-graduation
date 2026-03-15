@@ -298,4 +298,9 @@ public class RequestServiceImpl implements RequestService {
                         (existing, replacement) -> existing
                 ));
     }
+
+    @Override
+    public boolean checkUserParticipated(Long userId, Long eventId) {
+        return requestRepository.existsByEventAndRequester(userId, eventId);
+    }
 }

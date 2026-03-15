@@ -23,4 +23,6 @@ public interface RequestService {
     Long getConfirmedRequests(Long eventId);
 
     Map<Long, Long> getConfirmedRequestsBatch(List<Long> eventIds);
+
+    boolean checkUserParticipated(Long userId, Long eventId);
 }

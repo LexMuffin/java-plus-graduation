@@ -459,12 +459,9 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
 
-        // Проверяем, участвовал ли пользователь в событии
         try {
-            // Здесь должен быть вызов к сервису запросов для проверки участия
-            // requestClient.checkUserParticipated(userId, eventId);
+            requestClient.checkUserParticipated(userId, eventId);
 
-            // Отправляем лайк в Collector
             collectorClient.sendUserAction(userId, eventId, ActionTypeProto.ACTION_LIKE);
             log.info("Лайк успешно отправлен");
 
