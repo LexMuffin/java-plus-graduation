@@ -459,17 +459,13 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
 
-        try {
-            requestClient.checkUserParticipated(userId, eventId);
-
-            collectorClient.sendUserAction(userId, eventId, ActionTypeProto.ACTION_LIKE);
-            log.info("Лайк успешно отправлен");
-
-        } catch (Exception e) {
-            log.error("Ошибка при отправке лайка: {}", e.getMessage());
+        if (!requestClient.checkUserParticipated(userId, eventId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Пользователь может лайкать только посещённые мероприятия");
         }
+
+        collectorClient.sendUserAction(userId, eventId, ActionTypeProto.ACTION_LIKE);
+        log.info("Лайк успешно отправлен");
     }
 
     private Double getRatingForEvent(Long eventId) {
