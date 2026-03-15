@@ -27,28 +27,25 @@ public class UserActionService {
                 userActionProto.getUserId(), userActionProto.getEventId());
 
         try {
-            Instant timestamp = Instant.ofEpochSecond(
-                    userActionProto.getTimestamp().getSeconds(),
-                    userActionProto.getTimestamp().getNanos()
-            );
 
-            log.debug("Преобразованный timestamp: {}", timestamp);
-
-            UserActionAvro userActionAvro = new UserActionAvro()
-                    .newBuilder()
+            UserActionAvro userActionAvro = UserActionAvro.newBuilder()
                     .setUserId(userActionProto.getUserId())
                     .setEventId(userActionProto.getEventId())
                     .setActionType(toActionTypeAvro(userActionProto))
-                    .setTimestamp(timestamp)
+                    .setTimestamp(Instant.ofEpochSecond(
+                            userActionProto.getTimestamp().getSeconds(),
+                            userActionProto.getTimestamp().getNanos()
+                    )
+                    )
                     .build();
 
             send(kafkaConfig.getCollectorKafkaProperties().getUserActionTopic(),
                     userActionAvro.getEventId(),
-                    timestamp.toEpochMilli(),
+                    userActionAvro.getTimestamp().toEpochMilli(),
                     userActionAvro);
 
             log.info("UserAction успешно отправлен в Kafka: userId={}, eventId={}, timestamp={}",
-                    userActionProto.getUserId(), userActionProto.getEventId(), timestamp);
+                    userActionProto.getUserId(), userActionProto.getEventId(), userActionAvro.getTimestamp().toEpochMilli());
 
         } catch (IllegalArgumentException e) {
             log.error("Невалидное действие пользователя: userId={}, eventId={}, actionType={}",

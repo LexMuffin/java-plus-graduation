@@ -3,12 +3,8 @@ protocol EventSimilarityProtocol {
 
   record EventSimilarityAvro {
     long eventA;
-
     long eventB;
-
     double score;
-
-    union { null, timestamp_ms } timestamp = null;
+    timestamp_ms timestamp;
   }
-
 }

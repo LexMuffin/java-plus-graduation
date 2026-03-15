@@ -9,12 +9,8 @@ protocol UserActionProtocol {
 
   record UserActionAvro {
     long userId;
-
     long eventId;
-
     ActionTypeAvro actionType;
-
-    union { null, timestamp_ms } timestamp = null;
+    timestamp_ms timestamp;
   }
-
 }
