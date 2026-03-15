@@ -27,26 +27,37 @@ public class UserActionService {
                 userActionProto.getUserId(), userActionProto.getEventId());
 
         try {
+            Instant timestamp = Instant.ofEpochSecond(
+                    userActionProto.getTimestamp().getSeconds(),
+                    userActionProto.getTimestamp().getNanos()
+            );
+
+            log.debug("Преобразованный timestamp: {}", timestamp);
+
             UserActionAvro userActionAvro = new UserActionAvro()
                     .newBuilder()
                     .setUserId(userActionProto.getUserId())
                     .setEventId(userActionProto.getEventId())
                     .setActionType(toActionTypeAvro(userActionProto))
-                    .setTimestamp(Instant.ofEpochSecond(
-                            userActionProto.getTimestamp().getSeconds(),
-                            userActionProto.getTimestamp().getNanos())
-                    )
+                    .setTimestamp(timestamp)
                     .build();
 
             send(kafkaConfig.getCollectorKafkaProperties().getUserActionTopic(),
                     userActionAvro.getEventId(),
-                    userActionAvro.getTimestamp().toEpochMilli(),
+                    timestamp.toEpochMilli(),
                     userActionAvro);
+
+            log.info("UserAction успешно отправлен в Kafka: userId={}, eventId={}, timestamp={}",
+                    userActionProto.getUserId(), userActionProto.getEventId(), timestamp);
+
         } catch (IllegalArgumentException e) {
             log.error("Невалидное действие пользователя: userId={}, eventId={}, actionType={}",
                     userActionProto.getUserId(),
                     userActionProto.getEventId(),
-                    userActionProto.getActionType());
+                    userActionProto.getActionType(), e);
+        } catch (Exception e) {
+            log.error("Ошибка при обработке действия пользователя: userId={}, eventId={}",
+                    userActionProto.getUserId(), userActionProto.getEventId(), e);
         }
     }
 
@@ -71,12 +82,13 @@ public class UserActionService {
                 timestamp,
                 key,
                 specificRecordBase);
+
         producer.send(rec, (metadata, exception) -> {
             if (exception != null) {
-                log.error("Kafka: сообщение не отправлено, topic: {}", topic, exception);
+                log.error("Kafka: сообщение не отправлено, topic: {}, key: {}", topic, key, exception);
             } else {
-                log.info("Kafka: сообщение отправлено, topic: {}, partition: {}, offset: {}",
-                        metadata.topic(), metadata.partition(), metadata.offset());
+                log.info("Kafka: сообщение отправлено, topic: {}, partition: {}, offset: {}, timestamp: {}",
+                        metadata.topic(), metadata.partition(), metadata.offset(), timestamp);
             }
         });
     }
@@ -84,6 +96,7 @@ public class UserActionService {
     @PreDestroy
     private void close() {
         if (producer != null) {
+            log.info("Закрытие Kafka producer");
             producer.flush();
             producer.close();
         }
