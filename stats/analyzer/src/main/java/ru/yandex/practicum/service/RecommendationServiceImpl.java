@@ -42,12 +42,16 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .map(UserEventInteraction::getEventId)
                 .collect(Collectors.toSet());
 
-        Map<Long, Double> candidateScores = recentInteractions.stream()
-                .flatMap(interaction -> similarityRepository.findAllByEventId(interaction.getEventId()).stream()
-                        .map(sim -> Map.entry(
-                                getPairEventId(sim, interaction.getEventId()),
-                                sim.getScore()
-                        )))
+        List<Long> interactedEventIds = new ArrayList<>(interactedEvents);
+        List<EventSimilarity> allSimilarities = similarityRepository.findAllByEventIds(interactedEventIds);
+
+        Map<Long, Double> candidateScores = allSimilarities.stream()
+                .map(sim -> {
+                    Long candidateId = interactedEventIds.contains(sim.getEventA())
+                            ? sim.getEventB()
+                            : sim.getEventA();
+                    return new AbstractMap.SimpleEntry<>(candidateId, sim.getScore());
+                })
                 .filter(entry -> !interactedEvents.contains(entry.getKey()))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
@@ -67,11 +71,28 @@ public class RecommendationServiceImpl implements RecommendationService {
     public List<RecommendedEventProto> getSimilarEvents(Long eventId, Long userId, Integer maxResults) {
         log.info("Поиск похожих на мероприятие {} для пользователя {}", eventId, userId);
 
-        return similarityRepository.findSimilarEvents(eventId, PageRequest.of(0, maxResults * 2))
-                .stream()
+        List<EventSimilarity> similarEvents = similarityRepository.findSimilarEvents(eventId,
+                PageRequest.of(0, maxResults * 2));
+
+        if (similarEvents.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> candidateIds = similarEvents.stream()
+                .map(sim -> getPairEventId(sim, eventId))
+                .collect(Collectors.toList());
+
+        List<UserEventInteraction> userInteractions = interactionRepository
+                .findByUserIdAndEventIdIn(userId, candidateIds);
+
+        Set<Long> interactedEventIds = userInteractions.stream()
+                .map(UserEventInteraction::getEventId)
+                .collect(Collectors.toSet());
+
+        return similarEvents.stream()
                 .filter(sim -> {
                     Long candidateId = getPairEventId(sim, eventId);
-                    return !interactionRepository.existsByUserIdAndEventId(userId, candidateId);
+                    return !interactedEventIds.contains(candidateId);
                 })
                 .limit(maxResults)
                 .map(sim -> buildRecommendedEvent(
@@ -116,7 +137,11 @@ public class RecommendationServiceImpl implements RecommendationService {
                         EventSimilarity::getScore
                 ));
 
-        return userInteractions.stream()
+        if (similarityMap.isEmpty()) {
+            return 0.0;
+        }
+
+        double weightedSum = userInteractions.stream()
                 .filter(interaction -> {
                     Double similarity = similarityMap.get(interaction.getEventId());
                     return similarity != null && similarity > 0;
@@ -125,7 +150,13 @@ public class RecommendationServiceImpl implements RecommendationService {
                     Double similarity = similarityMap.get(interaction.getEventId());
                     return similarity * interaction.getWeight();
                 })
-                .sum() / similarityMap.values().stream().mapToDouble(Double::doubleValue).sum();
+                .sum();
+
+        double similaritySum = similarityMap.values().stream()
+                .mapToDouble(Double::doubleValue)
+                .sum();
+
+        return similaritySum > 0 ? weightedSum / similaritySum : 0.0;
     }
 
     private Long getPairEventId(EventSimilarity similarity, Long sourceEventId) {

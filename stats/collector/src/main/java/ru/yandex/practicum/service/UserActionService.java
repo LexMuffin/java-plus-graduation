@@ -26,29 +26,41 @@ public class UserActionService {
         log.info("UserActionService: обработка UserActionProto, userId={}, eventId={}",
                 userActionProto.getUserId(), userActionProto.getEventId());
 
-        UserActionAvro userActionAvro = new UserActionAvro()
-                .newBuilder()
-                .setUserId(userActionProto.getUserId())
-                .setEventId(userActionProto.getEventId())
-                .setActionType(toActionTypeAvro(userActionProto.getActionType()))
-                .setTimestamp(Instant.ofEpochSecond(
-                        userActionProto.getTimestamp().getSeconds(),
-                        userActionProto.getTimestamp().getNanos())
-                )
-                .build();
+        try {
+            UserActionAvro userActionAvro = new UserActionAvro()
+                    .newBuilder()
+                    .setUserId(userActionProto.getUserId())
+                    .setEventId(userActionProto.getEventId())
+                    .setActionType(toActionTypeAvro(userActionProto))
+                    .setTimestamp(Instant.ofEpochSecond(
+                            userActionProto.getTimestamp().getSeconds(),
+                            userActionProto.getTimestamp().getNanos())
+                    )
+                    .build();
 
-        send(kafkaConfig.getCollectorKafkaProperties().getUserActionTopic(),
-                userActionAvro.getEventId(),
-                userActionAvro.getTimestamp().toEpochMilli(),
-                userActionAvro);
+            send(kafkaConfig.getCollectorKafkaProperties().getUserActionTopic(),
+                    userActionAvro.getEventId(),
+                    userActionAvro.getTimestamp().toEpochMilli(),
+                    userActionAvro);
+        } catch (IllegalArgumentException e) {
+            log.error("Невалидное действие пользователя: userId={}, eventId={}, actionType={}",
+                    userActionProto.getUserId(),
+                    userActionProto.getEventId(),
+                    userActionProto.getActionType());
+        }
     }
 
-    private ActionTypeAvro toActionTypeAvro(ru.yandex.practicum.ewm.grpc.stats.messages.ActionTypeProto actionTypeProto) {
-        return switch (actionTypeProto) {
+    private ActionTypeAvro toActionTypeAvro(UserActionProto userActionProto) {
+        return switch (userActionProto.getActionType()) {
             case ACTION_VIEW -> ActionTypeAvro.VIEW;
             case ACTION_REGISTER -> ActionTypeAvro.REGISTER;
             case ACTION_LIKE -> ActionTypeAvro.LIKE;
-            default -> null;
+            default -> throw new IllegalArgumentException(
+                    String.format("Неизвестный тип действия: %s (userId=%d, eventId=%d)",
+                            userActionProto.getActionType(),
+                            userActionProto.getUserId(),
+                            userActionProto.getEventId())
+            );
         };
     }
 

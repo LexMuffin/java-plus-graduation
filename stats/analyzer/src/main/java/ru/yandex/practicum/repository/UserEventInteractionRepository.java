@@ -22,4 +22,6 @@ public interface UserEventInteractionRepository extends JpaRepository<UserEventI
     List<Object[]> sumWeightsByEventIds(@Param("eventIds") List<Long> eventIds);
 
     boolean existsByUserIdAndEventId(Long userId, Long eventId);
+
+    List<UserEventInteraction> findByUserIdAndEventIdIn(Long userId, List<Long> eventIds);
 }

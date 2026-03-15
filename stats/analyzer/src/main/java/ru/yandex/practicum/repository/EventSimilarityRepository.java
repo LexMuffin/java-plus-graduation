@@ -35,4 +35,7 @@ public interface EventSimilarityRepository extends JpaRepository<EventSimilarity
             "(es.eventA = :eventB AND es.eventB = :eventA)")
     Optional<Double> findSimilarityBetween(@Param("eventA") Long eventA,
                                            @Param("eventB") Long eventB);
+
+    @Query("SELECT es FROM EventSimilarity es WHERE es.eventA IN :eventIds OR es.eventB IN :eventIds")
+    List<EventSimilarity> findAllByEventIds(@Param("eventIds") List<Long> eventIds);
 }

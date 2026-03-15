@@ -23,7 +23,7 @@ public class UserActionServiceImpl implements UserActionService {
         long userId = action.getUserId();
         long eventId = action.getEventId();
         double weight = getActionWeight(action);
-        Instant timestamp = Instant.now();
+        Instant timestamp = action.getTimestamp();
 
         log.info("Обработка действия пользователя: userId={}, eventId={}, тип={}, вес={}",
                 userId, eventId, action.getActionType(), weight);
